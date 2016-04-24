@@ -31,8 +31,9 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     uint256 hash = wtx.GetHash();
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
-    if (wtx.IsCoinStake()) // ppcoin: coinstake transaction
+    if (wtx.IsCoinStake())
     {
+        // Stake generation
         parts.append(TransactionRecord(hash, nTime, TransactionRecord::StakeMint, "", -nDebit, wtx.GetValueOut()));
     }
     else if (nNet > 0 || wtx.IsCoinBase())
@@ -115,6 +116,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     sub.type = TransactionRecord::SendToAddress;
                     sub.address = CBitcoinAddress(address).ToString();
                 }
+// this is where to inject donation type
                 else
                 {
                     // Sent to IP, or other non-address transaction like OP_EVAL
@@ -171,7 +173,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
         if (wtx.nLockTime < LOCKTIME_THRESHOLD)
         {
             status.status = TransactionStatus::OpenUntilBlock;
-            status.open_for = wtx.nLockTime - nBestHeight + 1;
+            status.open_for = nBestHeight - wtx.nLockTime;
         }
         else
         {

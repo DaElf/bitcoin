@@ -2,20 +2,19 @@
 
 #include "guiutil.h"
 #include "bitcoinunits.h"
+
 #include "main.h"
 #include "wallet.h"
 #include "db.h"
 #include "ui_interface.h"
 #include "base58.h"
 
-#include <string>
-
 QString TransactionDesc::FormatTxStatus(const CWalletTx& wtx)
 {
     if (!wtx.IsFinal())
     {
         if (wtx.nLockTime < LOCKTIME_THRESHOLD)
-            return tr("Open for %n more block(s)", "", wtx.nLockTime - nBestHeight + 1);
+            return tr("Open for %n block(s)", "", nBestHeight - wtx.nLockTime);
         else
             return tr("Open until %1").arg(GUIUtil::dateTimeStr(wtx.nLockTime));
     }
@@ -112,6 +111,10 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
             CTxDestination dest = CBitcoinAddress(strAddress).Get();
             if (wallet->mapAddressBook.count(dest) && !wallet->mapAddressBook[dest].empty())
                 strHTML += GUIUtil::HtmlEscape(wallet->mapAddressBook[dest]) + " ";
+            if (strAddress == (fTestNet?CHARITY_ADDRESS_TESTNET:CHARITY_ADDRESS))
+            {
+                strHTML += "(charity) ";
+            }
             strHTML += GUIUtil::HtmlEscape(strAddress) + "<br>";
         }
 
@@ -169,6 +172,12 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                             strHTML += "<b>" + tr("To") + ":</b> ";
                             if (wallet->mapAddressBook.count(address) && !wallet->mapAddressBook[address].empty())
                                 strHTML += GUIUtil::HtmlEscape(wallet->mapAddressBook[address]) + " ";
+
+                            CTxDestination cdest = CBitcoinAddress(address).Get();
+                            if (cdest == (fTestNet?CBitcoinAddress(CHARITY_ADDRESS_TESTNET).Get():CBitcoinAddress(CHARITY_ADDRESS).Get()))
+                            {
+                                strHTML += "(charity) ";
+                            }
                             strHTML += GUIUtil::HtmlEscape(CBitcoinAddress(address).ToString());
                             strHTML += "<br>";
                         }
@@ -205,21 +214,22 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
         }
 
         strHTML += "<b>" + tr("Net amount") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, nNet, true) + "<br>";
-
+			
         //
         // Message
         //
-        if (wtx.mapValue.count("message") && !wtx.mapValue["message"].empty())
-            strHTML += "<br><b>" + tr("Message") + ":</b><br>" + GUIUtil::HtmlEscape(wtx.mapValue["message"], true) + "<br>";
-        if (wtx.mapValue.count("comment") && !wtx.mapValue["comment"].empty())
+        if (!wtx.mapValue["message"].empty())
+             strHTML += "<br><b>" + tr("Message") + ":</b><br>" + GUIUtil::HtmlEscape(wtx.mapValue["message"], true) + "<br>";
+
+		if (!wtx.mapValue["comment"].empty())
             strHTML += "<br><b>" + tr("Comment") + ":</b><br>" + GUIUtil::HtmlEscape(wtx.mapValue["comment"], true) + "<br>";
 
         strHTML += "<b>" + tr("Transaction ID") + ":</b> " + wtx.GetHash().ToString().c_str() + "<br>";
 
-        if (wtx.IsCoinBase())
-            strHTML += "<br>" + tr("Generated coins must wait 520 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.") + "<br>";
-        if (wtx.IsCoinStake())
-            strHTML += "<br>" + tr("Staked coins must wait 520 blocks before they can return to balance and be spent.  When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, its state will change to \"not accepted\" and it won't be a valid stake.  This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.") + "<br>";
+		
+
+        if (wtx.IsCoinBase() || wtx.IsCoinStake())
+            strHTML += "<br>" + tr("Generated coins must mature 10 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.") + "<br>";
 
         //
         // Debug view
@@ -237,6 +247,8 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
             strHTML += "<br><b>" + tr("Transaction") + ":</b><br>";
             strHTML += GUIUtil::HtmlEscape(wtx.ToString(), true);
 
+            CTxDB txdb("r"); // To fetch source txouts
+
             strHTML += "<br><b>" + tr("Inputs") + ":</b>";
             strHTML += "<ul>";
 
@@ -246,8 +258,8 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                 {
                     COutPoint prevout = txin.prevout;
 
-                    CCoins prev;
-                    if(pcoinsTip->GetCoins(prevout.hash, prev))
+                    CTransaction prev;
+                    if(txdb.ReadDiskTx(prevout.hash, prev))
                     {
                         if (prevout.n < prev.vout.size())
                         {

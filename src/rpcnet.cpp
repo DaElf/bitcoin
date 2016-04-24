@@ -1,12 +1,13 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
-// Copyright (c) 2013-2013 PPCoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "net.h"
 #include "bitcoinrpc.h"
 #include "alert.h"
-#include "base58.h"
+#include "wallet.h"
+#include "db.h"
+#include "walletdb.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -14,10 +15,11 @@ using namespace std;
 Value getconnectioncount(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getconnectioncount\n"
             "Returns the number of connections to other nodes.");
-
+*/
     LOCK(cs_vNodes);
     return (int)vNodes.size();
 }
@@ -38,10 +40,11 @@ static void CopyNodeStats(std::vector<CNodeStats>& vstats)
 Value getpeerinfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getpeerinfo\n"
             "Returns data about each connected network node.");
-
+*/
     vector<CNodeStats> vstats;
     CopyNodeStats(vstats);
 
@@ -54,16 +57,13 @@ Value getpeerinfo(const Array& params, bool fHelp)
         obj.push_back(Pair("services", strprintf("%08"PRI64x, stats.nServices)));
         obj.push_back(Pair("lastsend", (boost::int64_t)stats.nLastSend));
         obj.push_back(Pair("lastrecv", (boost::int64_t)stats.nLastRecv));
-        obj.push_back(Pair("bytessent", (boost::int64_t)stats.nSendBytes));
-        obj.push_back(Pair("bytesrecv", (boost::int64_t)stats.nRecvBytes));
         obj.push_back(Pair("conntime", (boost::int64_t)stats.nTimeConnected));
         obj.push_back(Pair("version", stats.nVersion));
         obj.push_back(Pair("subver", stats.strSubVer));
         obj.push_back(Pair("inbound", stats.fInbound));
+        obj.push_back(Pair("releasetime", (boost::int64_t)stats.nReleaseTime));
         obj.push_back(Pair("startingheight", stats.nStartingHeight));
         obj.push_back(Pair("banscore", stats.nMisbehavior));
-        if (stats.fSyncNode)
-            obj.push_back(Pair("syncnode", true));
 
         ret.push_back(obj);
     }
@@ -78,17 +78,18 @@ Value addnode(const Array& params, bool fHelp)
         strCommand = params[1].get_str();
     if (fHelp || params.size() != 2 ||
         (strCommand != "onetry" && strCommand != "add" && strCommand != "remove"))
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "addnode <node> <add|remove|onetry>\n"
             "Attempts add or remove <node> from the addnode list or try a connection to <node> once.");
-
+*/
     string strNode = params[0].get_str();
 
     if (strCommand == "onetry")
     {
         CAddress addr;
         ConnectNode(addr, strNode.c_str());
-        return Value::null;
+        return true;
     }
 
     LOCK(cs_vAddedNodes);
@@ -110,20 +111,25 @@ Value addnode(const Array& params, bool fHelp)
         vAddedNodes.erase(it);
     }
 
-    return Value::null;
+    return true;
 }
 
 Value getaddednodeinfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getaddednodeinfo <dns> [node]\n"
             "Returns information about the given added node, or all added nodes\n"
             "(note that onetry addnodes are not listed here)\n"
             "If dns is false, only a list of added nodes will be provided,\n"
             "otherwise connected information will also be available.");
+*/
+    bool fDns=false;
+//dvd  fDns = params[0].get_bool();
 
-    bool fDns = params[0].get_bool();
+    if (!strcmp(params[0].get_str().c_str(), "true"))
+        fDns = true;
 
     list<string> laddedNodes(0);
     if (params.size() == 1)
@@ -205,37 +211,9 @@ Value getaddednodeinfo(const Array& params, bool fHelp)
     return ret;
 }
 
-// ppcoin: make a public-private key pair
-Value makekeypair(const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() > 1)
-        throw runtime_error(
-            "makekeypair [prefix]\n"
-            "Make a public/private key pair.\n"
-            "[prefix] is optional preferred prefix for the public key.\n");
-
-    string strPrefix = "";
-    if (params.size() > 0)
-        strPrefix = params[0].get_str();
-
-    CKey key;
-    int nCount = 0;
-    do
-    {
-        key.MakeNewKey(false);
-        nCount++;
-    } while (nCount < 10000 && strPrefix != HexStr(key.GetPubKey().Raw()).substr(0, strPrefix.size()));
-
-    if (strPrefix != HexStr(key.GetPubKey().Raw()).substr(0, strPrefix.size()))
-        return Value::null;
-
-    CPrivKey vchPrivKey = key.GetPrivKey();
-    Object result;
-    result.push_back(Pair("PrivateKey", HexStr<CPrivKey::iterator>(vchPrivKey.begin(), vchPrivKey.end())));
-    result.push_back(Pair("PublicKey", HexStr(key.GetPubKey().Raw())));
-    return result;
-}
-
+extern CCriticalSection cs_mapAlerts;
+extern map<uint256, CAlert> mapAlerts;
+ 
 // ppcoin: send alert.  
 // There is a known deadlock situation with ThreadMessageHandler
 // ThreadMessageHandler: holds cs_vSend and acquiring cs_main in SendMessages()
@@ -243,7 +221,8 @@ Value makekeypair(const Array& params, bool fHelp)
 Value sendalert(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 6)
-	throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "sendalert <message> <privatekey> <minver> <maxver> <priority> <id> [cancelupto]\n"
             "<message> is the alert text message\n"
             "<privatekey> is hex string of alert master private key\n"
@@ -253,17 +232,35 @@ Value sendalert(const Array& params, bool fHelp)
             "<id> is the alert id\n"
             "[cancelupto] cancels all alert id's up to this number\n"
             "Returns true or false.");
-
+*/
     CAlert alert;
     CKey key;
 
     alert.strStatusBar = params[0].get_str();
-    alert.nMinVer = params[2].get_int();
-    alert.nMaxVer = params[3].get_int();
-    alert.nPriority = params[4].get_int();
-    alert.nID = params[5].get_int();
-    if (params.size() > 6)
-        alert.nCancel = params[6].get_int();
+    printf("alert.strStatusBar = %s\n", alert.strStatusBar.c_str());
+
+
+//dvd    alert.nMinVer = params[2].get_int();
+    alert.nMinVer = strtol((params[2].get_str()).c_str(), NULL, 10);
+    printf("alert.nMinVer = %d\n", alert.nMinVer);
+
+//dvd    alert.nMaxVer = params[3].get_int();
+    alert.nMaxVer = strtol((params[3].get_str()).c_str(), NULL, 10);
+    printf("alert.nMaxVer = %d\n", alert.nMaxVer);
+
+//dvd    alert.nPriority = params[4].get_int();
+    alert.nPriority = strtol((params[4].get_str()).c_str(), NULL, 10);
+    printf("alert.nPriority = %d\n", alert.nPriority);
+
+//dvd    alert.nID = params[5].get_int();
+    alert.nID = strtol((params[5].get_str()).c_str(), NULL, 10);
+    printf("alert.nID = %d\n", alert.nID);
+
+    if (params.size() > 6) {
+//dvd        alert.nCancel = params[6].get_int();
+        alert.nCancel = strtol((params[6].get_str()).c_str(), NULL, 10);
+        printf("alert.nCancel = %d\n", alert.nCancel);
+    }
     alert.nVersion = PROTOCOL_VERSION;
     alert.nRelayUntil = GetAdjustedTime() + 365*24*60*60;
     alert.nExpiration = GetAdjustedTime() + 365*24*60*60;
@@ -271,9 +268,12 @@ Value sendalert(const Array& params, bool fHelp)
     CDataStream sMsg(SER_NETWORK, PROTOCOL_VERSION);
     sMsg << (CUnsignedAlert)alert;
     alert.vchMsg = vector<unsigned char>(sMsg.begin(), sMsg.end());
-    
+
     vector<unsigned char> vchPrivKey = ParseHex(params[1].get_str());
-    key.SetPrivKey(CPrivKey(vchPrivKey.begin(), vchPrivKey.end())); // if key is not correct openssl may crash
+    if (! key.SetPrivKey(CPrivKey(vchPrivKey.begin(), vchPrivKey.end()))) // if key is not correct openssl may crash
+        throw runtime_error(
+                "Unable to verify alert private key");
+
     if (!key.Sign(Hash(alert.vchMsg.begin(), alert.vchMsg.end()), alert.vchSig))
         throw runtime_error(
             "Unable to sign alert, check private key?\n");  
