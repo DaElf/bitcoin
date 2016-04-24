@@ -105,6 +105,17 @@ int64 AmountFromValue(const Value& value)
     return nAmount;
 }
 
+int64 AmountFromZeroValue(const Value& value)
+{
+    double dAmount = value.get_real();
+    if (dAmount < 0.0 || dAmount > MAX_MONEY)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
+    int64 nAmount = roundint64(dAmount * COIN);
+    if (!MoneyRange(nAmount))
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
+    return nAmount;
+}
+
 Value ValueFromAmount(int64 amount)
 {
     return (double)amount / (double)COIN;
@@ -130,24 +141,41 @@ string CRPCTable::help(string strCommand) const
 {
     string strRet;
     set<rpcfn_type> setDone;
+    printf("bitcoinrpc.cpp / CRPCTable::help(\"%s\")\n", strCommand.c_str());
     for (map<string, const CRPCCommand*>::const_iterator mi = mapCommands.begin(); mi != mapCommands.end(); ++mi)
     {
         const CRPCCommand *pcmd = mi->second;
         string strMethod = mi->first;
+        printf("strMethod = %s\n", strMethod.c_str());
         // We already filter duplicates, but these deprecated screw up the sort order
         if (strMethod.find("label") != string::npos)
             continue;
         if (strCommand != "" && strMethod != strCommand)
             continue;
+        printf("try\n");
         try
         {
             Array params;
             rpcfn_type pfn = pcmd->actor;
-            if (setDone.insert(pfn).second)
-                (*pfn)(params, true);
+            string strHelp = pcmd->help;
+
+            if (strHelp != "") {
+                if (strCommand == "")
+                    if (strHelp.find('\n') != string::npos)
+                        strHelp = strHelp.substr(0, strHelp.find('\n'));
+                strRet += strHelp + "\n";
+            } else {
+                printf("pfn = pcmd->actor\n");
+                if (setDone.insert(pfn).second) {
+                    printf("calling pointer\n");
+                    pcmd->actor(params, true);
+ //             (*pfn)(params, true);
+                }
+            }
         }
         catch (std::exception& e)
         {
+            printf("catch\n");
             // Help text is returned in an exception
             string strHelp = string(e.what());
             if (strCommand == "")
@@ -165,10 +193,11 @@ string CRPCTable::help(string strCommand) const
 Value help(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "help [command]\n"
             "List commands, or get help for a command.");
-
+*/
     string strCommand;
     if (params.size() > 0)
         strCommand = params[0].get_str();
@@ -180,15 +209,17 @@ Value help(const Array& params, bool fHelp)
 Value stop(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "stop <detach>\n"
             "<detach> is true or false to detach the database or not for this stop only\n"
-            "Stop cleanwatercoin server (and possibly override the detachdb config value).");
+            "Stop 2GiveCoin server (and possibly override the detachdb config value).");
+*/
     // Shutdown will take long enough that the response should get back
     if (params.size() > 0)
         bitdb.SetDetach(params[0].get_bool());
     StartShutdown();
-    return "cleanwatercoin server stopping";
+    return "2GiveCoin server stopping";
 }
 
 
@@ -199,74 +230,79 @@ Value stop(const Array& params, bool fHelp)
 
 
 static const CRPCCommand vRPCCommands[] =
-{ //  name                      function                 safemd  unlocked
-  //  ------------------------  -----------------------  ------  --------
-    { "help",                   &help,                   true,   true },
-    { "stop",                   &stop,                   true,   true },
-    { "getblockcount",          &getblockcount,          true,   false },
-    { "getconnectioncount",     &getconnectioncount,     true,   false },
-    { "getpeerinfo",            &getpeerinfo,            true,   false },
-    { "getdifficulty",          &getdifficulty,          true,   false },
-    { "getgenerate",            &getgenerate,            true,   false },
-    { "setgenerate",            &setgenerate,            true,   false },
-    { "gethashespersec",        &gethashespersec,        true,   false },
-    { "getinfo",                &getinfo,                true,   false },
-    { "getmininginfo",          &getmininginfo,          true,   false },
-    { "getnewaddress",          &getnewaddress,          true,   false },
-    { "getnewpubkey",           &getnewpubkey,           true,   false },
-    { "getaccountaddress",      &getaccountaddress,      true,   false },
-    { "setaccount",             &setaccount,             true,   false },
-    { "getaccount",             &getaccount,             false,  false },
-    { "getaddressesbyaccount",  &getaddressesbyaccount,  true,   false },
-    { "sendtoaddress",          &sendtoaddress,          false,  false },
-    { "getreceivedbyaddress",   &getreceivedbyaddress,   false,  false },
-    { "getreceivedbyaccount",   &getreceivedbyaccount,   false,  false },
-    { "listreceivedbyaddress",  &listreceivedbyaddress,  false,  false },
-    { "listreceivedbyaccount",  &listreceivedbyaccount,  false,  false },
-    { "backupwallet",           &backupwallet,           true,   false },
-    { "keypoolrefill",          &keypoolrefill,          true,   false },
-    { "walletpassphrase",       &walletpassphrase,       true,   false },
-    { "walletpassphrasechange", &walletpassphrasechange, false,  false },
-    { "walletlock",             &walletlock,             true,   false },
-    { "encryptwallet",          &encryptwallet,          false,  false },
-    { "validateaddress",        &validateaddress,        true,   false },
-    { "validatepubkey",         &validatepubkey,         true,   false },
-    { "getbalance",             &getbalance,             false,  false },
-    { "move",                   &movecmd,                false,  false },
-    { "sendfrom",               &sendfrom,               false,  false },
-    { "sendmany",               &sendmany,               false,  false },
-    { "addmultisigaddress",     &addmultisigaddress,     false,  false },
-    { "getrawmempool",          &getrawmempool,          true,   false },
-    { "getblock",               &getblock,               false,  false },
-    { "getblockbynumber",       &getblockbynumber,       false,  false },
-    { "getblockhash",           &getblockhash,           false,  false },
-    { "gettransaction",         &gettransaction,         false,  false },
-    { "listtransactions",       &listtransactions,       false,  false },
-    { "listaddressgroupings",   &listaddressgroupings,   false,  false },
-    { "signmessage",            &signmessage,            false,  false },
-    { "verifymessage",          &verifymessage,          false,  false },
-    { "getwork",                &getwork,                true,   false },
-    { "getworkex",              &getworkex,              true,   false },
-    { "listaccounts",           &listaccounts,           false,  false },
-    { "settxfee",               &settxfee,               false,  false },
-    { "getblocktemplate",       &getblocktemplate,       true,   false },
-    { "submitblock",            &submitblock,            false,  false },
-    { "listsinceblock",         &listsinceblock,         false,  false },
-    { "dumpprivkey",            &dumpprivkey,            false,  false },
-    { "importprivkey",          &importprivkey,          false,  false },
-    { "listunspent",            &listunspent,            false,  false },
-    { "getrawtransaction",      &getrawtransaction,      false,  false },
-    { "createrawtransaction",   &createrawtransaction,   false,  false },
-    { "decoderawtransaction",   &decoderawtransaction,   false,  false },
-    { "signrawtransaction",     &signrawtransaction,     false,  false },
-    { "sendrawtransaction",     &sendrawtransaction,     false,  false },
-    { "getcheckpoint",          &getcheckpoint,          true,   false },
-    { "reservebalance",         &reservebalance,         false,  true},
-    { "checkwallet",            &checkwallet,            false,  true},
-    { "repairwallet",           &repairwallet,           false,  true},
-    { "resendtx",               &resendtx,               false,  true},
-    { "makekeypair",            &makekeypair,            false,  true},
-    { "sendalert",              &sendalert,              false,  false},
+{ //name                      function                 safemd  unlocked   help
+  //------------------------  -----------------------  ------  --------   -----
+  { "addmultisigaddress",     &addmultisigaddress,     false,  false,     "addmultisigaddress <nrequired> <'[\"key\",\"key\"]'> [account]\nAdd a nrequired-to-sign multisignature address to the wallet\"\neach key is a 2GiveCoin address or hex-encoded public key\nIf [account] is specified, assign address to [account]." },
+  { "addnode",                &addnode,                true,   true,      "addnode <node> <add|remove|onetry>\nAttempts add or remove <node> from the addnode list or try a connection to <node> once." },
+  { "backupwallet",           &backupwallet,           true,   false,     "backupwallet <destination>\nSafely copies wallet.dat to destination, which can be a directory or a path with filename." },
+  { "checkwallet",            &checkwallet,            false,  true,      "checkwallet\nCheck wallet for integrity.\n" },
+  { "createrawtransaction",   &createrawtransaction,   false,  false,     "createrawtransaction [{\"txid\":txid,\"vout\":n},...] {address:amount,...}\nCreate a transaction spending given inputs\n(array of objects containing transaction id and output number),\nsending to given address(es).\nReturns hex-encoded raw transaction.\nNote that the transaction's inputs are not signed, and\nit is not stored in the wallet or transmitted to the network." },
+  { "decoderawtransaction",   &decoderawtransaction,   false,  false,     "decoderawtransaction <hex string>\nReturn a JSON object representing the serialized, hex-encoded transaction." },
+  { "dumpprivkey",            &dumpprivkey,            false,  false,     "dumpprivkey <2GiveCoinaddress>\nReveals the private key corresponding to <2GiveCoinaddress>." },
+  { "encryptwallet",          &encryptwallet,          false,  false,     "encryptwallet <passphrase>\nEncrypts the wallet with <passphrase>." },
+  { "getaccount",             &getaccount,             false,  false,     "getaccount <2GiveCoinaddress>\nReturns the account associated with the given address." },
+  { "getaccountaddress",      &getaccountaddress,      true,   false,     "getaccountaddress <account>\nReturns the current 2GiveCoin address for receiving payments to this account." },
+  { "getaddednodeinfo",       &getaddednodeinfo,       true,   true,      "getaddednodeinfo <dns> [node]\nReturns information about the given added node, or all added nodes\n(note that onetry addnodes are not listed here)\nIf dns is false, only a list of added nodes will be provided,\notherwise connected information will also be available." },
+  { "getaddressesbyaccount",  &getaddressesbyaccount,  true,   false,     "getaddressesbyaccount <account>\nReturns the list of addresses for the given account." },
+  { "getbalance",             &getbalance,             false,  false,     "getbalance [account] [minconf=1]\nIf [account] is not specified, returns the server's total available balance.\nIf [account] is specified, returns the balance in the account." },
+  { "getblock",               &getblock,               false,  false,     "getblock <hash> [txinfo]\ntxinfo optional to print more detailed tx info\nReturns details of a block with given block-hash." },
+  { "getblockbynumber",       &getblockbynumber,       false,  false,     "getblockbynumber <number> [txinfo]\ntxinfo optional to print more detailed tx info\nReturns details of a block with given block-number." },
+  { "getblockcount",          &getblockcount,          true,   false,     "getblockcount\nReturns the number of blocks in the longest block chain." },
+  { "getblockhash",           &getblockhash,           false,  false,     "getblockhash <index>\nReturns hash of block in best-block-chain at <index>." },
+  { "getblocktemplate",       &getblocktemplate,       true,   false,     "getblocktemplate [params]\nReturns data needed to construct a block to work on:\n  \"version\" : block version\n  \"previousblockhash\" : hash of current highest block\n  \"transactions\" : contents of non-coinbase transactions that should be included in the next block\n  \"coinbaseaux\" : data that should be included in coinbase\n  \"coinbasevalue\" : maximum allowable input to coinbase transaction, including the generation award and transaction fees\n  \"target\" : hash target\n  \"mintime\" : minimum timestamp appropriate for next block\n  \"curtime\" : current timestamp\n  \"mutable\" : list of ways the block template may be changed\n  \"noncerange\" : range of valid nonces\n  \"sigoplimit\" : limit of sigops in blocks\n  \"sizelimit\" : limit of block size\n  \"bits\" : compressed target of next block\n  \"height\" : height of the next block\nSee https://en.bitcoin.it/wiki/BIP_0022 for full specification." },
+  { "getcheckpoint",          &getcheckpoint,          true,   false,     "getcheckpoint\nShow info of synchronized checkpoint." },
+  { "getconnectioncount",     &getconnectioncount,     true,   false,     "getconnectioncount\nReturns the number of connections to other nodes." },
+  { "getdifficulty",          &getdifficulty,          true,   false,     "getdifficulty\nReturns the difficulty as a multiple of the minimum difficulty." },
+  { "getgenerate",            &getgenerate,            true,   false,     "getgenerate\nReturns true or false." },
+  { "gethashespersec",        &gethashespersec,        true,   false,     "gethashespersec\nReturns a recent hashes per second performance measurement while generating." },
+  { "getinfo",                &getinfo,                true,   false,     "getinfo\nReturns an object containing various state info." },
+  { "getmininginfo",          &getmininginfo,          true,   false,     "getmininginfo\nReturns an object containing mining-related information." },
+  { "getmint",                &getmint,                true,   false,     "getmint\nReturns true or false" },
+  { "getnewaddress",          &getnewaddress,          true,   false,     "getnewaddress [account]\nReturns a new 2GiveCoin address for receiving payments.\nIf [account] is specified (recommended), it is added to the address book\nso payments received with the address will be credited to [account]." },
+  { "getnewpubkey",           &getnewpubkey,           true,   false,     "getnewpubkey [account]\nReturns new public key for coinbase generation." },
+  { "getpeerinfo",            &getpeerinfo,            true,   false,     "getpeerinfo\nReturns data about each connected network node." },
+  { "getrawmempool",          &getrawmempool,          true,   false,     "getrawmempool\nReturns all transaction ids in memory pool." },
+  { "getrawtransaction",      &getrawtransaction,      false,  false,     "getrawtransaction <txid> [verbose=0]\nIf verbose=0, returns a string that is\nserialized, hex-encoded data for <txid>.\nIf verbose is non-zero, returns an Object\nwith information about <txid>." },
+  { "getreceivedbyaccount",   &getreceivedbyaccount,   false,  false,     "getreceivedbyaccount <account> [minconf=1]\nReturns the total amount received by addresses with <account> in transactions with at least [minconf] confirmations." },
+  { "getreceivedbyaddress",   &getreceivedbyaddress,   false,  false,     "getreceivedbyaddress <2GiveCoinaddress> [minconf=1]\nReturns the total amount received by <2GiveCoinaddress> in transactions with at least [minconf] confirmations." },
+  { "gettransaction",         &gettransaction,         false,  false,     "gettransaction <txid>\nGet detailed information about <txid>" },
+  { "getwork",                &getwork,                true,   false,     "getwork [data]\nIf [data] is not specified, returns formatted hash data to work on:\n  \"midstate\" : precomputed hash state after hashing the first half of the data (DEPRECATED)\n  \"data\" : block data\n  \"hash1\" : formatted hash buffer for second hash (DEPRECATED)\n  \"target\" : little endian hash target\nIf [data] is specified, tries to solve the block and returns true if it was successful." },
+  { "getworkex",              &getworkex,              true,   false,     "getworkex [data, coinbase]\nIf [data, coinbase] is not specified, returns extended work data.\n" },
+  { "help",                   &help,                   true,   true,      "help [command]\nList commands, or get help for a command." },
+  { "importprivkey",          &importprivkey,          false,  false,     "importprivkey <2GiveCoinprivkey> [label]\nAdds a private key (as returned by dumpprivkey) to your wallet." },
+  { "keypoolrefill",          &keypoolrefill,          true,   false,     "keypoolrefill\nFills the keypool." },
+  { "listaccounts",           &listaccounts,           false,  false,     "listaccounts [minconf=1]\nReturns Object that has account names as keys, account balances as values." },
+  { "listaddressgroupings",   &listaddressgroupings,   false,  false,     "listaddressgroupings\nLists groups of addresses which have had their common ownership\nmade public by common use as inputs or as the resulting change\nin past transactions" },
+  { "listreceivedbyaccount",  &listreceivedbyaccount,  false,  false,     "listreceivedbyaccount [minconf=1] [includeempty=false]\n[minconf] is the minimum number of confirmations before payments are included.\n[includeempty] whether to include accounts that haven't received any payments.\nReturns an array of objects containing:\n  \"account\" : the account of the receiving addresses\n  \"amount\" : total amount received by addresses with this account\n  \"confirmations\" : number of confirmations of the most recent transaction included" },
+  { "listreceivedbyaddress",  &listreceivedbyaddress,  false,  false,     "listreceivedbyaddress [minconf=1] [includeempty=false]\n[minconf] is the minimum number of confirmations before payments are included.\n[includeempty] whether to include addresses that haven't received any payments.\nReturns an array of objects containing:\n  \"address\" : receiving address\n  \"account\" : the account of the receiving address\n  \"amount\" : total amount received by the address\n  \"confirmations\" : number of confirmations of the most recent transaction included" },
+  { "listsinceblock",         &listsinceblock,         false,  false,     "listsinceblock [blockhash] [target-confirmations]\nGet all transactions in blocks since block [blockhash], or all transactions if omitted" },
+  { "listtransactions",       &listtransactions,       false,  false,     "listtransactions [account] [count=10] [from=0]\nReturns up to [count] most recent transactions skipping the first [from] transactions for account [account]." },
+  { "listunspent",            &listunspent,            false,  false,     "listunspent [minconf=1] [maxconf=9999999]  [\"address\",...]\nReturns array of unspent transaction outputs\nwith between minconf and maxconf (inclusive) confirmations.\nOptionally filtered to only include txouts paid to specified addresses.\nResults are an array of Objects, each of which has:\n{txid, vout, scriptPubKey, amount, confirmations}" },
+  { "makekeypair",            &makekeypair,            false,  true,      "makekeypair [prefix]\nMake a public/private key pair.\n[prefix] is optional preferred prefix for the public key.\n" },
+  { "move",                   &movecmd,                false,  false,     "move <fromaccount> <toaccount> <amount> [minconf=1] [comment]\nMove from one account in your wallet to another." },
+  { "repairwallet",           &repairwallet,           false,  true,      "repairwallet\nRepair wallet if checkwallet reports any problem.\n" },
+  { "resendtx",               &resendtx,               false,  true,      "resendtx\nRe-send unconfirmed transactions.\n" },
+  { "reservebalance",         &reservebalance,         false,  true,      "reservebalance [<reserve> [amount]]\n<reserve> is true or false to turn balance reserve on or off.\n<amount> is a real and rounded to cent.\nSet reserve amount not participating in network protection.\nIf no parameters provided current setting is printed.\n" },
+  { "sendalert",              &sendalert,              false,  false,     "sendalert <message> <privatekey> <minver> <maxver> <priority> <id> [cancelupto]\n<message> is the alert text message\n<privatekey> is hex string of alert master private key\n<minver> is the minimum applicable internal client version\n<maxver> is the maximum applicable internal client version\n<priority> is integer priority number\n<id> is the alert id\n[cancelupto] cancels all alert id's up to this number\nReturns true or false." },
+  { "sendfrom",               &sendfrom,               false,  false,     "sendfrom <fromaccount> <to2GiveCoinaddress> <amount> [minconf=1] [comment] [comment-to]\n<amount> is a real and is rounded to the nearest 0.000001" }, // + HelpRequiringPassphrase()
+  { "sendmany",               &sendmany,               false,  false,     "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\namounts are double-precision floating point numbers" },
+  { "sendrawtransaction",     &sendrawtransaction,     false,  false,     "sendrawtransaction <hex string>\nSubmits raw transaction (serialized, hex-encoded) to local node and network." },
+  { "sendtoaddress",          &sendtoaddress,          false,  false,     "sendtoaddress <2GiveCoinaddress> <amount> [comment] [comment-to]\n<amount> is a real and is rounded to the nearest 0.000001" },
+  { "setaccount",             &setaccount,             true,   false,     "setaccount <2GiveCoinaddress> <account>\nSets the account associated with the given address." },
+  { "setdefaultaddress",      &setdefaultaddress,      true,   false,     "setdefaultaddress <2GiveCoinaddress>\nSets the default receive address in the wallet." },
+  { "setgenerate",            &setgenerate,            true,   false,     "setgenerate <generate> [genproclimit]\n<generate> is true or false to turn generation on or off.\nGeneration is limited to [genproclimit] processors, -1 is unlimited." },
+  { "setmint",                &setmint,                true,   false,     "setmint <stake>\n<stake> is true or false to turn proof of stake minting on or off." },
+  { "settxfee",               &settxfee,               false,  false,     "settxfee <amount>\n<amount> is a real and is rounded to the nearest 0.01" },
+  { "signmessage",            &signmessage,            false,  false,     "signmessage <2GiveCoinaddress> <message>\nSign a message with the private key of an address" },
+  { "signrawtransaction",     &signrawtransaction,     false,  false,     "signrawtransaction <hex string> [{\"txid\":txid,\"vout\":n,\"scriptPubKey\":hex},...] [<privatekey1>,...] [sighashtype=\"ALL\"]\nSign inputs for raw transaction (serialized, hex-encoded).\n" },
+  { "stop",                   &stop,                   true,   true,      "stop <detach>\n<detach> is true or false to detach the database or not for this stop only\nStop 2GiveCoin server (and possibly override the detachdb config value)." },
+  { "submitblock",            &submitblock,            false,  false,     "submitblock <hex data> [optional-params-obj]\n[optional-params-obj] parameter is currently ignored.\nAttempts to submit new block to network.\nSee https://en.bitcoin.it/wiki/BIP_0022 for full specification." },
+  { "validateaddress",        &validateaddress,        true,   false,     "validateaddress <2GiveCoinaddress>\nReturn information about <2GiveCoinaddress>." },
+  { "validatepubkey",         &validatepubkey,         true,   false,     "validatepubkey <2GiveCoinpubkey>\nReturn information about <2GiveCoinpubkey>." },
+  { "verifymessage",          &verifymessage,          false,  false,     "verifymessage <2GiveCoinaddress> <signature> <message>\nVerify a signed message" },
+  { "walletlock",             &walletlock,             true,   false,     "walletlock\nRemoves the wallet encryption key from memory, locking the wallet.\nAfter calling this method, you will need to call walletpassphrase again\nbefore being able to call any methods which require the wallet to be unlocked." },
+  { "walletpassphrase",       &walletpassphrase,       true,   false,     "walletpassphrase <passphrase> <timeout> [mintonly]\nStores the wallet decryption key in memory for <timeout> seconds.\nmintonly is optional true/false allowing only block minting." },
+  { "walletpassphrasechange", &walletpassphrasechange, false,  false,     "walletpassphrasechange <oldpassphrase> <newpassphrase>\nChanges the wallet passphrase from <oldpassphrase> to <newpassphrase>." },
 };
 
 CRPCTable::CRPCTable()
@@ -300,7 +336,7 @@ string HTTPPost(const string& strMsg, const map<string,string>& mapRequestHeader
 {
     ostringstream s;
     s << "POST / HTTP/1.1\r\n"
-      << "User-Agent: cleanwatercoin-json-rpc/" << FormatFullVersion() << "\r\n"
+      << "User-Agent: 2GiveCoin-json-rpc/" << FormatFullVersion() << "\r\n"
       << "Host: 127.0.0.1\r\n"
       << "Content-Type: application/json\r\n"
       << "Content-Length: " << strMsg.size() << "\r\n"
@@ -331,7 +367,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
     if (nStatus == HTTP_UNAUTHORIZED)
         return strprintf("HTTP/1.0 401 Authorization Required\r\n"
             "Date: %s\r\n"
-            "Server: cleanwatercoin-json-rpc/%s\r\n"
+            "Server: 2GiveCoin-json-rpc/%s\r\n"
             "WWW-Authenticate: Basic realm=\"jsonrpc\"\r\n"
             "Content-Type: text/html\r\n"
             "Content-Length: 296\r\n"
@@ -358,7 +394,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
             "Connection: %s\r\n"
             "Content-Length: %"PRIszu"\r\n"
             "Content-Type: application/json\r\n"
-            "Server: cleanwatercoin-json-rpc/%s\r\n"
+            "Server: 2GiveCoin-json-rpc/%s\r\n"
             "\r\n"
             "%s",
         nStatus,
@@ -734,7 +770,7 @@ void ThreadRPCServer2(void* parg)
     {
         unsigned char rand_pwd[32];
         RAND_bytes(rand_pwd, 32);
-        string strWhatAmI = "To use cleanwatercoind";
+        string strWhatAmI = "To use 2GiveCoind";
         if (mapArgs.count("-server"))
             strWhatAmI = strprintf(_("To use the %s option"), "\"-server\"");
         else if (mapArgs.count("-daemon"))
@@ -1147,6 +1183,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "stop"                   && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "setmint"                && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
     if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
     if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);

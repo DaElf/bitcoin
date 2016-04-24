@@ -14,9 +14,11 @@ using namespace std;
 Value getgenerate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw std::runtime_error(
             "getgenerate\n"
             "Returns true or false.");
+*/
 
     return GetBoolArg("-gen");
 }
@@ -25,10 +27,12 @@ Value getgenerate(const Array& params, bool fHelp)
 Value setgenerate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "setgenerate <generate> [genproclimit]\n"
             "<generate> is true or false to turn generation on or off.\n"
             "Generation is limited to [genproclimit] processors, -1 is unlimited.");
+*/
 
     bool fGenerate = true;
     if (params.size() > 0)
@@ -47,14 +51,46 @@ Value setgenerate(const Array& params, bool fHelp)
     return Value::null;
 }
 
+Value getmint(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        return NULL;
+/*dvd        throw std::runtime_error(
+            "getmint\n"
+            "Returns true or false.");
+*/
+    return fPosMinting;
+}
+
+Value setmint(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        return NULL;
+/*dvd        throw runtime_error(
+            "setmint <stake>\n"
+            "<stake> is true or false to turn proof of stake minting on or off."
+*/
+
+    bool fStake = true;
+    if (params.size() > 0)
+        fStake = params[0].get_bool();
+
+    mapArgs["-mint"] = (fStake ? "1" : "0");
+
+    StakeCoins(fStake, pwalletMain);
+    return Value::null;
+}
+
+
 
 Value gethashespersec(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "gethashespersec\n"
             "Returns a recent hashes per second performance measurement while generating.");
-
+*/
     if (GetTimeMillis() - nHPSTimerStart > 8000)
         return (boost::int64_t)0;
     return (boost::int64_t)dHashesPerSec;
@@ -64,10 +100,11 @@ Value gethashespersec(const Array& params, bool fHelp)
 Value getmininginfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getmininginfo\n"
             "Returns an object containing mining-related information.");
-
+*/
     Object obj;
     obj.push_back(Pair("blocks",        (int)nBestHeight));
     obj.push_back(Pair("currentblocksize",(uint64_t)nLastBlockSize));
@@ -109,11 +146,12 @@ Value GetNetworkHashPS(int lookup) {
 Value getnetworkhashps(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getnetworkhashps [blocks]\n"
             "Returns the estimated network hashes per second based on the last 120 blocks.\n"
             "Pass in [blocks] to override # of blocks, -1 specifies since last difficulty change.");
-
+*/
     return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120);
 }
 
@@ -121,16 +159,17 @@ Value getnetworkhashps(const Array& params, bool fHelp)
 Value getworkex(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
-        throw runtime_error(
+        return NULL;
+/*        throw runtime_error(
             "getworkex [data, coinbase]\n"
             "If [data, coinbase] is not specified, returns extended work data.\n"
         );
-
+*/
     if (vNodes.empty())
-        throw JSONRPCError(-9, "cleanwatercoin is not connected!");
+        throw JSONRPCError(-9, "2GiveCoin is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(-10, "cleanwatercoin is downloading blocks...");
+        throw JSONRPCError(-10, "2GiveCoin is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;
@@ -251,7 +290,8 @@ Value getworkex(const Array& params, bool fHelp)
 Value getwork(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getwork [data]\n"
             "If [data] is not specified, returns formatted hash data to work on:\n"
             "  \"midstate\" : precomputed hash state after hashing the first half of the data (DEPRECATED)\n" // deprecated
@@ -259,12 +299,13 @@ Value getwork(const Array& params, bool fHelp)
             "  \"hash1\" : formatted hash buffer for second hash (DEPRECATED)\n" // deprecated
             "  \"target\" : little endian hash target\n"
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
+*/
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "cleanwatercoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "2GiveCoin is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "cleanwatercoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "2GiveCoin is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
@@ -367,7 +408,8 @@ Value getwork(const Array& params, bool fHelp)
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getblocktemplate [params]\n"
             "Returns data needed to construct a block to work on:\n"
             "  \"version\" : block version\n"
@@ -385,7 +427,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
             "  \"bits\" : compressed target of next block\n"
             "  \"height\" : height of the next block\n"
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
-
+*/
     std::string strMode = "template";
     if (params.size() > 0)
     {
@@ -405,10 +447,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "cleanwatercoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "2GiveCoin is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "cleanwatercoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "2GiveCoin is downloading blocks...");
 
     static CReserveKey reservekey(pwalletMain);
 
@@ -524,12 +566,13 @@ Value getblocktemplate(const Array& params, bool fHelp)
 Value submitblock(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "submitblock <hex data> [optional-params-obj]\n"
             "[optional-params-obj] parameter is currently ignored.\n"
             "Attempts to submit new block to network.\n"
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
-
+*/
     vector<unsigned char> blockData(ParseHex(params[0].get_str()));
     CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
     CBlock block;

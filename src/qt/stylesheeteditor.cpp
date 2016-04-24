@@ -38,7 +38,9 @@
 **
 ****************************************************************************/
 
-#include <QtWidgets>
+#include <QWidget>
+#include <QStyleFactory>
+#include <QFile>
 
 #include "stylesheeteditor.h"
 

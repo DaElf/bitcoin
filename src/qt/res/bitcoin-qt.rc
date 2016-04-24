@@ -1,4 +1,4 @@
-IDI_ICON1 ICON DISCARDABLE "icons/cleanwatercoin.ico"
+IDI_ICON1 ICON DISCARDABLE "icons/givecoin.ico"
 
 #include <windows.h>             // needed for VERSIONINFO
 #include "../../clientversion.h" // holds the needed client version information
@@ -18,14 +18,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "cleanwatercoin"
-            VALUE "FileDescription",    "cleanwatercoin-Qt (OSS GUI client for cleanwatercoin)"
+            VALUE "CompanyName",        "Strength in Numbers Foundation"
+            VALUE "FileDescription",    "2GiveCoin-Qt (OSS GUI client for GiveCoin)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "cleanwatercoin-qt"
-            VALUE "LegalCopyright",     "2009-2012 The Bitcoin developers, 2012-2013 The cleanwatercoin & PPCoin developers"
+            VALUE "InternalName",       "2GiveCoin-Qt"
+            VALUE "LegalCopyright",     "2009-2012 The Bitcoin developers, 2012-2013 The cleanwatercoin & PPCoin developers, 2016 The Strength in Numbers Foundation"
             VALUE "LegalTrademarks1",   "Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "cleanwatercoin-qt.exe"
-            VALUE "ProductName",        "cleanwatercoin-Qt"
+            VALUE "OriginalFilename",   "2GiveCoin-Qt.exe"
+            VALUE "ProductName",        "2GiveCoin-Qt"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

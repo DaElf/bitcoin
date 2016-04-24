@@ -16,6 +16,7 @@ class TransactionView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
+class GiftCoinsDialog;
 class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
@@ -88,6 +89,7 @@ private:
     QAction *sendCoinsAction;
     QAction *addressBookAction;
     QAction *charitySendAction;
+    QAction *giftCoinsAction;
     QAction *signMessageAction;
     QAction *verifyMessageAction;
     QAction *aboutAction;
@@ -160,6 +162,8 @@ private slots:
     void gotoSendCoinsPage();
     /** Switch to send coins page and set charity wallet as receipient*/
     void gotoSendCoinsCharityPage();
+    /** Switch to gift coins page and set charity wallet as receipient*/
+    void gotoGiftCoinsPage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

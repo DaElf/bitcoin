@@ -88,7 +88,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole(0)
 {
     resize(850, 550);
-    setWindowTitle(tr("cleanwatercoin") + " - " + tr("Wallet"));
+    setWindowTitle(tr("2GiveCoin") + " - " + tr("Wallet"));
     styleSheetEditor = new StyleSheetEditor(this);
 
     qApp->setStyleSheet(
@@ -123,7 +123,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
                 "#frame2 { background-color: #ffffff; } " \
                     "#spacer { background:#a7aaac;border:none; } " \
                 "QToolBar#toolbar2 { background-color: #00ccff; width: 72px; min-height: 80px; max-height: 80px; border: 0px; margin: -4px; padding: -4px; } " \
-                "QToolBar#toolbar2 > QToolButton { background-color: #00ccff; height1: 100%; width: 72px; icon-size1: 72px; } " \
+                "QToolBar#toolbar2 > QToolButton { background-color: #00ccff; height: 100%; width: 72px; icon-size: 72px; } " \
                 "QToolBar#toolbar2 > QToolButton:disabled { background-color: #00ccff; height: 100%; } " \
                 "QToolBar#toolbar { min-height: 80px; max-height: 80px; padding1-top:0px; background: #1d1d1d; max-width:1200px; border: none; margin: -4px; padding: -4px; } " \
                 "QToolBar#toolbar > QToolButton { color: #00ccff; border: none; font-size:10px; height: 100%; font-family:Open Sans;padding-top:10px; width:72px; background-color: #1d1d1d } " \
@@ -297,13 +297,13 @@ void BitcoinGUI::createActions()
 
     tabGroup->addAction(overviewAction);
 
-    sendCoinsAction = new QAction(QIcon(":/icons/cwc-icon-send-big"), tr("&Send Water"), this);
-    sendCoinsAction->setToolTip(tr("Send coins to a cleanwatercoin address"));
+    sendCoinsAction = new QAction(QIcon(":/icons/cwc-icon-send-big"), tr("&Give"), this);
+    sendCoinsAction->setToolTip(tr("Send coins to a 2GiveCoin address"));
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
 
-    receiveCoinsAction = new QAction(QIcon(":/icons/cwc-icon-get-big"), tr("&Get Water"), this);
+    receiveCoinsAction = new QAction(QIcon(":/icons/cwc-icon-get-big"), tr("&Receive"), this);
     receiveCoinsAction->setToolTip(tr("Show the list of addresses for receiving payments"));
     receiveCoinsAction->setCheckable(true);
     receiveCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_3));
@@ -336,14 +336,14 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About cleanwatercoin"), this);
-    aboutAction->setToolTip(tr("Show information about cleanwatercoin"));
+    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About 2GiveCoin"), this);
+    aboutAction->setToolTip(tr("Show information about 2GiveCoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
-    optionsAction->setToolTip(tr("Modify configuration options for cleanwatercoin"));
+    optionsAction->setToolTip(tr("Modify configuration options for 2GiveCoin"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
     toggleHideAction = new QAction(QIcon(":/icons/bitcoin"), tr("&Show / Hide"), this);
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
@@ -357,12 +357,16 @@ void BitcoinGUI::createActions()
     signMessageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
     verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
 
-    charitySendAction = new QAction(QIcon(":/icons/cwc-icon-give-big"), tr("Give &Water"), this);
+    giftCoinsAction = new QAction(QIcon(":/icons/cwc-icon-qrcode-big"), tr("&Gift"), this);
+    giftCoinsAction->setToolTip(tr("Gift coins for Social Tipping"));
+
+    charitySendAction = new QAction(QIcon(":/icons/cwc-icon-give-big"), tr("&Donate"), this);
     charitySendAction->setToolTip(tr("Donate coins for Charity purposes"));
+
 
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
-    openRPCConsoleAction = new QAction(QIcon(":/icons/debugwindow"), tr("&Debug window"), this);
+    openRPCConsoleAction = new QAction(QIcon(":/icons/debugwindow"), tr("&Advanced Options"), this);
     openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
 //    editStyleSheetAction = new QAction(QIcon(":/icons/export"), "Edit Styles", this);
 //    editStyleSheetAction->setToolTip("Edit styles of this app");
@@ -378,6 +382,7 @@ void BitcoinGUI::createActions()
     connect(lockWalletToggleAction, SIGNAL(triggered()), this, SLOT(lockWalletToggle()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
+    connect(giftCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsCharityPage()));
     connect(charitySendAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsCharityPage()));
 }
 
@@ -427,14 +432,17 @@ void BitcoinGUI::createMenuBar()
 
 void BitcoinGUI::createToolBars()
 {
-    QToolBar *toolbar2 = addToolBar(tr("Cleanwater Icon"));
+    QToolBar *toolbar2 = addToolBar(tr("2GiveCoin Icon"));
     toolbar2->setObjectName("toolbar2");
     toolbar2->setFloatable(false);
     toolbar2->setMovable(false);
-    QAction *cwcicon = new QAction(QIcon(":/icons/cwc-icon"),QString(""),toolbar2);
+    toolbar2->setIconSize(QSize(100,85));
+    QAction *cwcicon = new QAction(QIcon(":/icons/cwc-icon"), tr("2give.info"),toolbar2);
+
     cwcicon->setObjectName("cwcicon");
-    cwcicon->setDisabled(true);
-    toolbar2->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    cwcicon->setDisabled(false);
+    toolbar2->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    // toolbar2->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolbar2->addAction(cwcicon);
 
     QToolBar *toolbar = addToolBar(tr("Tabs toolbar"));
@@ -442,10 +450,13 @@ void BitcoinGUI::createToolBars()
     toolbar->setFloatable(false);
     toolbar->setMovable(false);
     toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    toolbar->setFont(QFont("Arial",8));
+    toolbar->setFont(QFont("Arial",10));
+    toolbar->setIconSize(QSize(64,64));
+
     toolbar->addAction(overviewAction);
     toolbar->addAction(sendCoinsAction);
     toolbar->addAction(receiveCoinsAction);
+    toolbar->addAction(giftCoinsAction);
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
     toolbar->addAction(lockWalletToggleAction);
@@ -471,7 +482,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
 #endif
             if(trayIcon)
             {
-                trayIcon->setToolTip(tr("cleanwatercoin client") + QString(" ") + tr("[testnet]"));
+                trayIcon->setToolTip(tr("2GiveCoin client") + QString(" ") + tr("[testnet]"));
                 trayIcon->setIcon(QIcon(":/icons/toolbar_testnet"));
                 toggleHideAction->setIcon(QIcon(":/icons/toolbar_testnet"));
             }
@@ -531,7 +542,7 @@ void BitcoinGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip(tr("cleanwatercoin client"));
+    trayIcon->setToolTip(tr("2GiveCoin client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
         this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -601,7 +612,7 @@ void BitcoinGUI::setNumConnections(int count)
     default: icon = ":/icons/connect_4"; break;
     }
     labelConnectionsIcon->setPixmap(QIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to cleanwatercoin network", "", count));
+    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to 2GiveCoin network", "", count));
 }
 
 void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
@@ -868,6 +879,22 @@ void BitcoinGUI::gotoSendCoinsCharityPage()
     disconnect(exportAction, SIGNAL(triggered()), 0, 0);
 }
 
+void BitcoinGUI::gotoGiftCoinsPage()
+{
+    sendCoinsAction->setChecked(true);
+    centralWidget->setCurrentWidget(sendCoinsPage);
+    //charitySendAction->setEnabled(false);
+    //SendCoinsEntry *entry = qobject_cast<SendCoinsEntry*>(sendCoinsPage->entries->itemAt(i)->widget());
+    SendCoinsRecipient rv;
+    rv.address = (fTestNet?CHARITY_ADDRESS_TESTNET:CHARITY_ADDRESS);
+    rv.amount = CHARITY_DEFAULT_AMOUNT;
+
+    sendCoinsPage->pasteEntry(rv, true);
+
+    exportAction->setEnabled(false);
+    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
+}
+
 void BitcoinGUI::gotoSignMessageTab(QString addr)
 {
     // call show() in showTab_SM()
@@ -909,7 +936,7 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
         if (nValidUrisFound)
             gotoSendCoinsPage();
         else
-            notificator->notify(Notificator::Warning, tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid cleanwatercoin address or malformed URI parameters."));
+            notificator->notify(Notificator::Warning, tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid 2GiveCoin address or malformed URI parameters."));
     }
 
     event->acceptProposedAction();
@@ -924,7 +951,7 @@ void BitcoinGUI::handleURI(QString strURI)
         gotoSendCoinsPage();
     }
     else
-        notificator->notify(Notificator::Warning, tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid cleanwatercoin address or malformed URI parameters."));
+        notificator->notify(Notificator::Warning, tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid 2GiveCoin address or malformed URI parameters."));
 }
 
 void BitcoinGUI::setEncryptionStatus(int status)

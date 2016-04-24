@@ -30,7 +30,8 @@ static const int MAX_OUTBOUND_CONNECTIONS = 12;
 void ThreadMessageHandler2(void* parg);
 void ThreadSocketHandler2(void* parg);
 void ThreadOpenConnections2(void* parg);
-void ThreadOpenAddedConnections2(void* parg);
+//dvd void ThreadOpenAddedConnections2(void* parg);
+void ThreadOpenAddedConnections2();
 #ifdef USE_UPNP
 void ThreadMapPort2(void* parg);
 #endif
@@ -73,6 +74,10 @@ CCriticalSection cs_vOneShots;
 
 set<CNetAddr> setservAddNodeAddresses;
 CCriticalSection cs_setservAddNodeAddresses;
+
+//dvd addnode support
+vector<std::string> vAddedNodes;
+CCriticalSection cs_vAddedNodes;
 
 static CSemaphore *semOutbound = NULL;
 
@@ -360,6 +365,7 @@ bool GetMyExternalIP(CNetAddr& ipRet)
         // replacements, we should ask for volunteers to put this simple
         // php file on their web server that prints the client IP:
         //  <?php echo $_SERVER["REMOTE_ADDR"]; ?>
+        // dvd this very suggestion to http://givecoin.io/checkip
         if (nHost == 1)
         {
             addrConnect = CService("91.198.22.70",80); // checkip.dyndns.org
@@ -373,7 +379,7 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 
             pszGet = "GET / HTTP/1.1\r\n"
                      "Host: checkip.dyndns.org\r\n"
-                     "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)\r\n"
+                     "User-Agent: 2GiveCoin Wallet (v2.0.0.0)\r\n"
                      "Connection: close\r\n"
                      "\r\n";
 
@@ -381,18 +387,18 @@ bool GetMyExternalIP(CNetAddr& ipRet)
         }
         else if (nHost == 2)
         {
-            addrConnect = CService("74.208.43.192", 80); // www.showmyip.com
+            addrConnect = CService("204.246.68.168", 80); // givecoin.io
 
             if (nLookup == 1)
             {
-                CService addrIP("www.showmyip.com", 80, true);
+                CService addrIP("givecoin.io", 80, true);
                 if (addrIP.IsValid())
                     addrConnect = addrIP;
             }
 
-            pszGet = "GET /simple/ HTTP/1.1\r\n"
-                     "Host: www.showmyip.com\r\n"
-                     "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)\r\n"
+            pszGet = "GET /checkip/ HTTP/1.1\r\n"
+                     "Host: givecoin.io\r\n"
+                     "User-Agent: 2GiveCoin Wallet (v2.0.0.0)\r\n"
                      "Connection: close\r\n"
                      "\r\n";
 
@@ -484,11 +490,11 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest, int64 nTimeout)
     }
 
 
-    /// debug print
-    printf("trying connection %s lastseen=%.1fhrs\n",
+// dvd debug print
+/*    printf("trying connection %s lastseen=%.1fhrs\n",
         pszDest ? pszDest : addrConnect.ToString().c_str(),
         pszDest ? 0 : (double)(GetAdjustedTime() - addrConnect.nTime)/3600.0);
-
+*/
     // Connect
     SOCKET hSocket;
     if (pszDest ? ConnectSocketByName(addrConnect, hSocket, pszDest, GetDefaultPort()) : ConnectSocket(addrConnect, hSocket))
@@ -1066,7 +1072,7 @@ void ThreadMapPort2(void* parg)
             }
         }
 
-        string strDesc = "cleanwatercoin " + FormatFullVersion();
+        string strDesc = "2GiveCoin " + FormatFullVersion();
 #ifndef UPNPDISCOVER_SUCCESS
         /* miniupnpc 1.5 */
         r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
@@ -1148,11 +1154,11 @@ void MapPort()
 // The second name should resolve to a list of seed addresses.
 
 //static const char *strMainNetDNSSeed[][2] = {
-//    {"seed.cleanwatercoin.org", "seed.cleanwatercoin.org"},
+//    {"givecoin.io", "givecoin.io"},
 //};
 
 static const char *strDNSSeed[][2] = {
-    {"seed.cleanwatercoin.org", "seed.cleanwatercoin.org"},
+    {"seed.givecoin.io", "seed2.givecoin.io"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
@@ -1212,18 +1218,9 @@ void ThreadDNSAddressSeed2(void* parg)
 
 
 
-
-
-
-
-
-
-
-
-
 unsigned int pnSeed[] =
 {
-    0x6759AA6B, 0x04D9AA6B
+//    0x6759AA6B, 0x04D9AA6B        // 107.170.89.103, 107.170.217.4
 };
 
 void DumpAddresses()
@@ -1286,6 +1283,7 @@ void ThreadOpenConnections(void* parg)
     printf("ThreadOpenConnections exited\n");
 }
 
+
 void static ProcessOneShot()
 {
     string strDest;
@@ -1305,6 +1303,8 @@ void static ProcessOneShot()
 }
 
 // ppcoin: stake minter thread
+// dvd why is this in net.cpp!??
+/*
 void static ThreadStakeMinter(void* parg)
 {
     printf("ThreadStakeMinter started\n");
@@ -1324,6 +1324,7 @@ void static ThreadStakeMinter(void* parg)
     }
     printf("ThreadStakeMinter exiting, %d threads remaining\n", vnThreadsRunning[THREAD_MINTER]);
 }
+*/
 
 void ThreadOpenConnections2(void* parg)
 {
@@ -1455,7 +1456,7 @@ void ThreadOpenAddedConnections(void* parg)
     try
     {
         vnThreadsRunning[THREAD_ADDEDCONNECTIONS]++;
-        ThreadOpenAddedConnections2(parg);
+        ThreadOpenAddedConnections2();
         vnThreadsRunning[THREAD_ADDEDCONNECTIONS]--;
     }
     catch (std::exception& e) {
@@ -1468,6 +1469,92 @@ void ThreadOpenAddedConnections(void* parg)
     printf("ThreadOpenAddedConnections exited\n");
 }
 
+void ThreadOpenAddedConnections2()
+{
+
+    printf("ThreadOpenAddedConnections started\n");
+    mapMultiArgs["-addnode"].push_back("seed.givecoin.io");
+
+    mapMultiArgs["-addnode"].push_back("seed2.givecoin.io");
+    {
+        LOCK(cs_vAddedNodes);
+        vAddedNodes = mapMultiArgs["-addnode"];
+    }
+
+    if (HaveNameProxy()) {
+        while(!fShutdown) {
+            list<string> lAddresses(0);
+            {
+                LOCK(cs_vAddedNodes);
+                BOOST_FOREACH(string& strAddNode, vAddedNodes)
+                    lAddresses.push_back(strAddNode);
+            }
+            BOOST_FOREACH(string& strAddNode, lAddresses) {
+                CAddress addr;
+                CSemaphoreGrant grant(*semOutbound);
+                OpenNetworkConnection(addr, &grant, strAddNode.c_str());
+                Sleep(500);
+            }
+            Sleep(120000); // Retry every 2 minutes
+        }
+    }
+
+    while (true)
+    {
+        list<string> lAddresses(0);
+        {
+            LOCK(cs_vAddedNodes);
+            BOOST_FOREACH(string& strAddNode, vAddedNodes)
+                lAddresses.push_back(strAddNode);
+        }
+
+        list<vector<CService> > lservAddressesToAdd(0);
+        BOOST_FOREACH(string& strAddNode, lAddresses)
+        {
+            vector<CService> vservNode(0);
+            if(Lookup(strAddNode.c_str(), vservNode, GetDefaultPort(), fNameLookup, 0))
+            {
+                lservAddressesToAdd.push_back(vservNode);
+                {
+                    LOCK(cs_setservAddNodeAddresses);
+                    BOOST_FOREACH(CService& serv, vservNode)
+                        setservAddNodeAddresses.insert(serv);
+                }
+            }
+        }
+        // Attempt to connect to each IP for each addnode entry until at least one is successful per addnode entry
+        // (keeping in mind that addnode entries can have many IPs if fNameLookup)
+        {
+            LOCK(cs_vNodes);
+            BOOST_FOREACH(CNode* pnode, vNodes)
+                for (list<vector<CService> >::iterator it = lservAddressesToAdd.begin(); it != lservAddressesToAdd.end(); it++)
+                    BOOST_FOREACH(CService& addrNode, *(it))
+                        if (pnode->addr == addrNode)
+                        {
+                            it = lservAddressesToAdd.erase(it);
+                            it--;
+                            break;
+                        }
+        }
+        BOOST_FOREACH(vector<CService>& vserv, lservAddressesToAdd)
+        {
+            CSemaphoreGrant grant(*semOutbound);
+            OpenNetworkConnection(CAddress(*(vserv.begin())), &grant);
+            Sleep(500);
+            if (fShutdown)
+                return;
+        }
+        if (fShutdown)
+            return;
+        vnThreadsRunning[THREAD_ADDEDCONNECTIONS]--;
+        Sleep(120000); // Retry every 2 minutes
+        vnThreadsRunning[THREAD_ADDEDCONNECTIONS]++;
+        if (fShutdown)
+            return;
+    }
+}
+
+/* dvd replaced above
 void ThreadOpenAddedConnections2(void* parg)
 {
     printf("ThreadOpenAddedConnections started\n");
@@ -1538,6 +1625,7 @@ void ThreadOpenAddedConnections2(void* parg)
             return;
     }
 }
+*/
 
 // if successful, this moves the passed grant to the constructed node
 bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound, const char *strDest, bool fOneShot)
@@ -1749,7 +1837,7 @@ bool BindListenPort(const CService &addrBind, string& strError)
     {
         int nErr = WSAGetLastError();
         if (nErr == WSAEADDRINUSE)
-            strError = strprintf(_("Unable to bind to %s on this computer. cleanwatercoin is probably already running."), addrBind.ToString().c_str());
+            strError = strprintf(_("Unable to bind to %s on this computer. 2GiveCoin is probably already running."), addrBind.ToString().c_str());
         else
             strError = strprintf(_("Unable to bind to %s on this computer (bind returned error %d, %s)"), addrBind.ToString().c_str(), nErr, strerror(nErr));
         printf("%s\n", strError.c_str());
@@ -1886,14 +1974,17 @@ void StartNode(void* parg)
     if (!NewThread(ThreadDumpAddress, NULL))
         printf("Error; NewThread(ThreadDumpAddress) failed\n");
 
+
     // ppcoin: mint proof-of-stake blocks in the background
-    if (fPosMinting)
+/*dvd    if (fPosMinting)
     {
         if (!NewThread(ThreadStakeMinter, pwalletMain))
             printf("Error: NewThread(ThreadStakeMinter) failed\n");
     } else {
         printf("Proof Of Stake Minting disabled\n");
     }
+*/
+    StakeCoins(fPosMinting, pwalletMain);
 
     // Generate coins in the background
     GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain);

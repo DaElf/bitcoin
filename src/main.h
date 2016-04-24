@@ -32,12 +32,13 @@ static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 static const unsigned int MAX_INV_SZ = 50000;
-static const int64 MIN_TX_FEE = 1 * CENT;
-static const int64 MIN_RELAY_TX_FEE = 1 * CENT;
+// static const int64 MIN_TX_FEE = 1 * CENT;
+static const int64 MIN_TX_FEE = 0 * CENT;         // 1% RELAY_TX_FEE to reward POW support, anything else is generosity
+static const int64 MIN_RELAY_TX_FEE = 0 * CENT;
 static const int64 MAX_MONEY = 1000000000 * COIN;			// 1 billion
 static const int64 CIRCULATION_MONEY = MAX_MONEY;
 static const double TAX_PERCENTAGE = 0.01;
-static const int64 MAX_MINT_PROOF_OF_STAKE = 0.08 * COIN;	// 8% annual interest  default for testing
+static const int64 MAX_MINT_PROOF_OF_STAKE = 0.05 * COIN;	// 5% annual interest
 
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 
@@ -45,11 +46,13 @@ inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONE
 // Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 
-static const int CUTOFF_POW_BLOCK = 150000;       // at 150,000 Blockheight, PoW stops being accepted. Cleanwatercoin turns into a pure PoS coin.
+static const int CUTOFF_POW_BLOCK = 500;  // at 500 Blockheight, PoW stops being generated. 2GiveCoin turns into a hybrid PoW/PoS coin.
 
 static const int MAX_SCRIPTCHECK_THREADS = 16;
-#define CHARITY_ADDRESS_TESTNET "nVagPzHPNywPCGCXUmsEnfjnCSSYkCz6eB" // Cleanwatercoin Charity Address in TestNet
-#define CHARITY_ADDRESS "5anJYFYW7npP4MyNaAtzTLb5ek2Lxgyb7d" // Cleanwatercoin Charity Address
+
+
+#define CHARITY_ADDRESS "GiveCoin8hYRfrg5A5J4QHuiQ4KZWjYAJj" // xtc.inter.com
+#define CHARITY_ADDRESS_TESTNET "nVagPzHPNywPCGCXUmsEnfjnCSSYkCz6eB" //  Charity Address in TestNet
 static const int64 CHARITY_DEFAULT_AMOUNT = 100 * COIN;  // Default amount of Charity sent
 
 
@@ -62,8 +65,11 @@ static const int fHaveUPnP = true;
 static const int fHaveUPnP = false;
 #endif
 
-static const uint256 hashGenesisBlockOfficial("0x0000029c5af0435f4cc6068205cba81e7d6f57722f29e8d49763ee229a702a84");
-static const uint256 hashGenesisBlockTestNet ("0x0000029c5af0435f4cc6068205cba81e7d6f57722f29e8d49763ee229a702a84");
+// dvd
+static const uint256 hashGenesisBlockTestNet ("0x00000a055a8a21ab15d2c24bf5769100e7e3d3e4134fb8a6a7e879f13a91c974");
+static const uint256 hashGenesisBlockOfficial("0x00000a055a8a21ab15d2c24bf5769100e7e3d3e4134fb8a6a7e879f13a91c974");
+
+
 /*
  static const char* pubGenesis[] = {
 "028477730958b00cd4bf03ed80fa9c5a7d049484110c43aeb1ab512f29b2442b39",
@@ -135,6 +141,7 @@ CBlockIndex* FindBlockByHeight(int nHeight);
 bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 bool LoadExternalBlockFile(FILE* fileIn);
+void StakeCoins(bool fStake, CWallet* pwallet);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
 CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake=false);
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);

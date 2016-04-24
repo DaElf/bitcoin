@@ -97,6 +97,7 @@ public:
     rpcfn_type actor;
     bool okSafeMode;
     bool unlocked;
+    std::string help;
 };
 
 /**
@@ -125,6 +126,7 @@ extern const CRPCTable tableRPC;
 
 extern int64 nWalletUnlockTime;
 extern int64 AmountFromValue(const json_spirit::Value& value);
+extern int64 AmountFromZeroValue(const json_spirit::Value& value);
 extern json_spirit::Value ValueFromAmount(int64 amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
 
@@ -136,13 +138,17 @@ extern void EnsureWalletIsUnlocked();
 
 
 extern json_spirit::Value getconnectioncount(const json_spirit::Array& params, bool fHelp); // in rpcnet.cpp
-extern json_spirit::Value getpeerinfo(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getpeerinfo(const json_spirit::Array& params, bool fHelp); // in rpcnet.cpp
+extern json_spirit::Value addnode(const json_spirit::Array& params, bool fHelp); // in rcpnet.cpp
+extern json_spirit::Value getaddednodeinfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value dumpprivkey(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value importprivkey(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value sendalert(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getgenerate(const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
 extern json_spirit::Value setgenerate(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getmint(const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
+extern json_spirit::Value setmint(const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
 extern json_spirit::Value gethashespersec(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getmininginfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getwork(const json_spirit::Array& params, bool fHelp);
@@ -150,6 +156,7 @@ extern json_spirit::Value getworkex(const json_spirit::Array& params, bool fHelp
 extern json_spirit::Value getblocktemplate(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value submitblock(const json_spirit::Array& params, bool fHelp);
 
+extern json_spirit::Value setdefaultaddress(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value getnewaddress(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value getaccountaddress(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value setaccount(const json_spirit::Array& params, bool fHelp);

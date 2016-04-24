@@ -120,10 +120,11 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool fPri
 Value getblockcount(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/* dvd        throw runtime_error(
             "getblockcount\n"
             "Returns the number of blocks in the longest block chain.");
-
+*/
     return nBestHeight;
 }
 
@@ -131,10 +132,12 @@ Value getblockcount(const Array& params, bool fHelp)
 Value getdifficulty(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
+        return NULL;
+/*dvd
         throw runtime_error(
             "getdifficulty\n"
             "Returns the difficulty as a multiple of the minimum difficulty.");
-
+*/
     Object obj;
     obj.push_back(Pair("proof-of-work",        GetDifficulty()));
     obj.push_back(Pair("proof-of-stake",       GetDifficulty(GetLastBlockIndex(pindexBest, true))));
@@ -145,12 +148,13 @@ Value getdifficulty(const Array& params, bool fHelp)
 
 Value settxfee(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 1 || AmountFromValue(params[0]) < MIN_TX_FEE)
-        throw runtime_error(
+    if (fHelp || params.size() < 1 || params.size() > 1 || AmountFromZeroValue(params[0]) < MIN_TX_FEE)
+        return NULL;
+/*dvd        throw runtime_error(
             "settxfee <amount>\n"
             "<amount> is a real and is rounded to the nearest 0.01");
-
-    nTransactionFee = AmountFromValue(params[0]);
+*/
+    nTransactionFee = AmountFromZeroValue(params[0]);
     nTransactionFee = (nTransactionFee / CENT) * CENT;  // round to cent
 
     return true;
@@ -159,10 +163,11 @@ Value settxfee(const Array& params, bool fHelp)
 Value getrawmempool(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getrawmempool\n"
             "Returns all transaction ids in memory pool.");
-
+*/
     vector<uint256> vtxid;
     mempool.queryHashes(vtxid);
 
@@ -176,13 +181,15 @@ Value getrawmempool(const Array& params, bool fHelp)
 Value getblockhash(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
-        throw runtime_error(
+        return NULL;
+/*dvd       throw runtime_error(
             "getblockhash <index>\n"
             "Returns hash of block in best-block-chain at <index>.");
-
+*/
     int nHeight = params[0].get_int();
     if (nHeight < 0 || nHeight > nBestHeight)
-        throw runtime_error("Block number out of range.");
+        return NULL;
+//dvd        throw runtime_error("Block number out of range.");
 
     CBlockIndex* pblockindex = FindBlockByHeight(nHeight);
     return pblockindex->phashBlock->GetHex();
@@ -191,11 +198,12 @@ Value getblockhash(const Array& params, bool fHelp)
 Value getblock(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getblock <hash> [txinfo]\n"
             "txinfo optional to print more detailed tx info\n"
             "Returns details of a block with given block-hash.");
-
+*/
     std::string strHash = params[0].get_str();
     uint256 hash(strHash);
 
@@ -212,14 +220,16 @@ Value getblock(const Array& params, bool fHelp)
 Value getblockbynumber(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getblock <number> [txinfo]\n"
             "txinfo optional to print more detailed tx info\n"
             "Returns details of a block with given block-number.");
-
+*/
     int nHeight = params[0].get_int();
     if (nHeight < 0 || nHeight > nBestHeight)
-        throw runtime_error("Block number out of range.");
+        return NULL;
+//dvd        throw runtime_error("Block number out of range.");
 
     CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hashBestChain];
@@ -238,10 +248,11 @@ Value getblockbynumber(const Array& params, bool fHelp)
 Value getcheckpoint(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
+        return NULL;
+/*dvd        throw runtime_error(
             "getcheckpoint\n"
             "Show info of synchronized checkpoint.\n");
-
+*/
     Object result;
     CBlockIndex* pindexCheckpoint;
 

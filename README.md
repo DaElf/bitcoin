@@ -1,17 +1,16 @@
-Clean Water Coin
+# 2GiveCoin
+GiveCoin 2.0
 
 Technical Details
-Algorithm: Scrypt
-Type: Proof of Work and Proof of Stake
-Symbol: WATER
-Max Coins: 1,000,000,000
+Homepage:  http://2give.info
 
-Block time: 120 seconds
+Whitepaper / Value Proposition:  http://bit.ly/2GiveCoin
 
-Difficulty Re-Target Time: Every block
+Facebook : https://www.facebook.com/projectgivecoin/
 
+Twitter: https://twitter.com/2GiveCoin
 
-Block Rewards: 
+Bitcointalk:  https://bitcointalk.org/index.php?topic=741714.0
 
 1 to 50: IPO: 10,000,000 Dispersed entirely to investors and confirmation with checkpoint at block 50
 

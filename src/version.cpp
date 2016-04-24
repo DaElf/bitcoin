@@ -8,11 +8,11 @@
 // Name of client reported in the 'version' message. Report the same name
 // for both bitcoind and bitcoin-qt, to make it harder for attackers to
 // target servers or GUI users specifically.
-const std::string CLIENT_NAME("cleanwatercoin");
+const std::string CLIENT_NAME("2GiveCoin");
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   ""
-
+#define CLIENT_VERSION_SUFFIX   "-RC1"
+#define BUILD_DATE __DATE__ ", " __TIME__
 
 // The following part of the code determines the CLIENT_BUILD variable.
 // Several mechanisms are used for this:
@@ -34,7 +34,7 @@ const std::string CLIENT_NAME("cleanwatercoin");
 #endif
 
 // git will put "#define GIT_ARCHIVE 1" on the next line inside archives. 
-#define GIT_ARCHIVE 1
+//#define GIT_ARCHIVE 1
 #ifdef GIT_ARCHIVE
 #    define GIT_COMMIT_ID ""
 #    define GIT_COMMIT_DATE "$Format:%cD$"

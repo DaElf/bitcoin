@@ -295,12 +295,12 @@ QString TransactionTableModel::formatTxStatus(const TransactionRecord *wtx) cons
         status = tr("Confirmed (%1 confirmations)").arg(wtx->status.depth);
         break;
     }
-    if(wtx->type == TransactionRecord::Generated  || wtx->type == TransactionRecord::StakeMint)
+    if (wtx->type == TransactionRecord::Generated  || wtx->type == TransactionRecord::StakeMint)
     {
-        switch(wtx->status.maturity)
+        switch (wtx->status.maturity)
         {
         case TransactionStatus::Immature:
-            status += "\n" + tr("Mined balance will be available when it matures in %n more block(s)", "", wtx->status.matures_in);
+            status += "\n" + tr("This balance will be available when it matures in %n more block(s)", "", wtx->status.matures_in);
             break;
         case TransactionStatus::Mature:
             break;
@@ -360,8 +360,9 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
     case TransactionRecord::SendToSelf:
         return tr("Payment to yourself");
     case TransactionRecord::StakeMint:
+        return tr("Interest");
     case TransactionRecord::Generated:
-        return tr("Mined");
+        return tr("Reward");
     default:
         return QString();
     }
@@ -398,10 +399,14 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
         return QString::fromStdString(wtx->address);
     case TransactionRecord::RecvWithAddress:
     case TransactionRecord::SendToAddress:
-    case TransactionRecord::Generated:
+//    case TransactionRecord::Generated:
         return lookupAddress(wtx->address, tooltip);
     case TransactionRecord::SendToOther:
         return QString::fromStdString(wtx->address);
+    case TransactionRecord::StakeMint:
+        return tr("Interest");
+    case TransactionRecord::Generated:
+        return tr("Reward");
     case TransactionRecord::SendToSelf:
     default:
         return tr("(n/a)");

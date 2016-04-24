@@ -34,7 +34,7 @@ SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
 
 #if QT_VERSION >= 0x040700
      /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-     ui->lineEditCoinControlChange->setPlaceholderText(tr("Enter a CleanwaterCoin address (e.g. 5rXW1RKLDe8VMNwTwLwSiKuATN5M74EL85)"));
+     ui->lineEditCoinControlChange->setPlaceholderText(tr("Enter a 2GiveCoin address (e.g. GiveKLDe8VMNwTwLwSiKuATN5M74EL85)"));
 #endif
 
     addEntry();
@@ -142,9 +142,13 @@ void SendCoinsDialog::on_sendButton_clicked()
     QStringList formatted;
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
+//dvd
+#if QT_VERSION < 0x050000
         formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), Qt::escape(rcp.label), rcp.address));
+#else
+        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), QString(rcp.label).toHtmlEscaped(), rcp.address));
+#endif
     }
-
     fNewRecipientAllowed = false;
 
     QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),

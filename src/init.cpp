@@ -81,7 +81,7 @@ void Shutdown(void* parg)
         delete pwalletMain;
         NewThread(ExitTimeout, NULL);
         Sleep(50);
-        printf("cleanwatercoin exited\n\n");
+        printf("2GiveCoin exited\n\n");
         fExit = true;
 #ifndef QT_GUI
         // ensure non-UI client gets exited here, but let Bitcoin-Qt reach 'return 0;' in bitcoin.cpp
@@ -136,12 +136,12 @@ bool AppInit(int argc, char* argv[])
         if (mapArgs.count("-?") || mapArgs.count("--help"))
         {
             // First part of help message is specific to bitcoind / RPC client
-            std::string strUsage = _("cleanwatercoin version") + " " + FormatFullVersion() + "\n\n" +
+            std::string strUsage = _("2GiveCoin version") + " " + FormatFullVersion() + "\n\n" +
                 _("Usage:") + "\n" +
-                  "  cleanwatercoind [options]                     " + "\n" +
-                  "  cleanwatercoind [options] <command> [params]  " + _("Send command to -server or cleanwatercoind") + "\n" +
-                  "  cleanwatercoind [options] help                " + _("List commands") + "\n" +
-                  "  cleanwatercoind [options] help <command>      " + _("Get help for a command") + "\n";
+                  "  2GiveCoind [options]                     " + "\n" +
+                  "  2GiveCoind [options] <command> [params]  " + _("Send command to -server or 2GiveCoind") + "\n" +
+                  "  2GiveCoind [options] help                " + _("List commands") + "\n" +
+                  "  2GiveCoind [options] help <command>      " + _("Get help for a command") + "\n";
 
             strUsage += "\n" + HelpMessage();
 
@@ -151,7 +151,7 @@ bool AppInit(int argc, char* argv[])
 
         // Command-line RPC
         for (int i = 1; i < argc; i++)
-            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "cleanwatercoin:"))
+            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "2GiveCoin:"))
                 fCommandLine = true;
 
         if (fCommandLine)
@@ -191,13 +191,13 @@ int main(int argc, char* argv[])
 
 bool static InitError(const std::string &str)
 {
-    uiInterface.ThreadSafeMessageBox(str, _("cleanwatercoin"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+    uiInterface.ThreadSafeMessageBox(str, _("2GiveCoin"), CClientUIInterface::OK | CClientUIInterface::MODAL);
     return false;
 }
 
 bool static InitWarning(const std::string &str)
 {
-    uiInterface.ThreadSafeMessageBox(str, _("cleanwatercoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
+    uiInterface.ThreadSafeMessageBox(str, _("2GiveCoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
     return true;
 }
 
@@ -219,8 +219,8 @@ std::string HelpMessage()
 {
     string strUsage = _("Options:") + "\n" +
         "  -?                     " + _("This help message") + "\n" +
-        "  -conf=<file>           " + _("Specify configuration file (default: cleanwatercoin.conf)") + "\n" +
-        "  -pid=<file>            " + _("Specify pid file (default: cleanwatercoind.pid)") + "\n" +
+        "  -conf=<file>           " + _("Specify configuration file (default: 2GiveCoin.conf)") + "\n" +
+        "  -pid=<file>            " + _("Specify pid file (default: 2GiveCoind.pid)") + "\n" +
         "  -gen                   " + _("Generate coins") + "\n" +
         "  -gen=0                 " + _("Don't generate coins") + "\n" +
         "  -datadir=<dir>         " + _("Specify data directory") + "\n" +
@@ -231,7 +231,7 @@ std::string HelpMessage()
         "  -socks=<n>             " + _("Select the version of socks proxy to use (4-5, default: 5)") + "\n" +
         "  -tor=<ip:port>         " + _("Use proxy to reach tor hidden services (default: same as -proxy)") + "\n"
         "  -dns                   " + _("Allow DNS lookups for -addnode, -seednode and -connect") + "\n" +
-        "  -port=<port>           " + _("Listen for connections on <port> (default: 53591 or testnet: 43591)") + "\n" +
+        "  -port=<port>           " + _("Listen for connections on <port> (default: 6763 or testnet: 16763)") + "\n" +
         "  -maxconnections=<n>    " + _("Maintain at most <n> connections to peers (default: 125)") + "\n" +
         "  -addnode=<ip>          " + _("Add a node to connect to and attempt to keep the connection open") + "\n" +
         "  -connect=<ip>          " + _("Connect only to the specified node(s)") + "\n" +
@@ -280,7 +280,7 @@ std::string HelpMessage()
         "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
 		"  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n" +
         "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n" +
-        "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n" +
+        "  -keypool=<n>           " + _("Set key pool size to <n> (default: 1)") + "\n" +
         "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n" +
         "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + "\n" +
         "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n" +
@@ -291,8 +291,8 @@ std::string HelpMessage()
         "  -blockminsize=<n>      "   + _("Set minimum block size in bytes (default: 0)") + "\n" +
         "  -blockmaxsize=<n>      "   + _("Set maximum block size in bytes (default: 250000)") + "\n" +
         "  -blockprioritysize=<n> "   + _("Set maximum size of high-priority/low-fee transactions in bytes (default: 27000)") + "\n" +
-        "  -posmint=0             "   + _("Disable the PoS minting thread (default: 1)") + "\n" +
-        "  -minting=0             "   + _("Disable the PoS minting thread (default: 1)") + "\n" +
+//        "  -posmint=0             "   + _("Disable the PoS minting thread (default: 1)") + "\n" +
+        "  -mint=0             "   + _("Disable the PoS minting thread (default: 1)") + "\n" +
 
         "\n" + _("SSL options: (see the Bitcoin Wiki for SSL setup instructions)") + "\n" +
         "  -rpcssl                                  " + _("Use OpenSSL (https) for JSON-RPC connections") + "\n" +
@@ -392,9 +392,9 @@ bool AppInit2()
     }
 
     // ********************************************************* Step 3: parameter-to-internal-flags
-
-    fPosMinting = GetBoolArg("-posmint", true); // set pos minter threads on or off (default=on)
-    fPosMinting = GetBoolArg("-minting", true); // set pos minter threads on or off (default=on)
+//only one of these are necessary
+//dvd    fPosMinting = GetBoolArg("-posmint", true); // set pos minter threads on or off (default=on)
+    fPosMinting = GetBoolArg("-mint", true); // set pos minter threads on or off (default=on)
     fDebug = GetBoolArg("-debug");
     SoftSetBoolArg("-irc", false);
     SoftSetBoolArg("-dnsseed", true);
@@ -458,7 +458,7 @@ bool AppInit2()
     if (file) fclose(file);
     static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
     if (!lock.try_lock())
-        return InitError(strprintf(_("Cannot obtain a lock on data directory %s.  cleanwatercoin is probably already running."), strDataDir.c_str()));
+        return InitError(strprintf(_("Cannot obtain a lock on data directory %s.  2GiveCoin is probably already running."), strDataDir.c_str()));
 
 #if !defined(WIN32) && !defined(QT_GUI)
     if (fDaemon)
@@ -485,7 +485,7 @@ bool AppInit2()
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    printf("cleanwatercoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
+    printf("2GiveCoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
     printf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
     if (!fLogTimestamps)
         printf("Startup time: %s\n", DateTimeStrFormat("%x %H:%M:%S", GetTime()).c_str());
@@ -494,7 +494,7 @@ bool AppInit2()
     std::ostringstream strErrors;
 
     if (fDaemon)
-        fprintf(stdout, "cleanwatercoin server starting\n");
+        fprintf(stdout, "2GiveCoin server starting\n");
 
     int64 nStart;
 
@@ -526,7 +526,7 @@ bool AppInit2()
                                      " Original wallet.dat saved as wallet.{timestamp}.bak in %s; if"
                                      " your balance or transactions are incorrect you should"
                                      " restore from a backup."), strDataDir.c_str());
-            uiInterface.ThreadSafeMessageBox(msg, _("cleanwatercoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
+            uiInterface.ThreadSafeMessageBox(msg, _("2GiveCoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
         }
         if (r == CDBEnv::RECOVER_FAIL)
             return InitError(_("wallet.dat corrupt, salvage failed"));
@@ -649,6 +649,8 @@ bool AppInit2()
     {
         if (!Checkpoints::SetCheckpointPrivKey(GetArg("-checkpointkey", "")))
             InitError(_("Unable to sign checkpoint, wrong checkpointkey?\n"));
+        else
+            printf("-checkpointkey set\n");
     }
 
     BOOST_FOREACH(string strDest, mapMultiArgs["-seednode"])
@@ -736,13 +738,13 @@ bool AppInit2()
         {
             string msg(_("Warning: error reading wallet.dat! All keys read correctly, but transaction data"
                          " or address book entries might be missing or incorrect."));
-            uiInterface.ThreadSafeMessageBox(msg, _("cleanwatercoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
+            uiInterface.ThreadSafeMessageBox(msg, _("2GiveCoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
         }
         else if (nLoadWalletRet == DB_TOO_NEW)
-            strErrors << _("Error loading wallet.dat: Wallet requires newer version of cleanwatercoin") << "\n";
+            strErrors << _("Error loading wallet.dat: Wallet requires newer version of 2GiveCoin") << "\n";
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
-            strErrors << _("Wallet needed to be rewritten: restart cleanwatercoin to complete") << "\n";
+            strErrors << _("Wallet needed to be rewritten: restart 2GiveCoin to complete") << "\n";
             printf("%s", strErrors.str().c_str());
             return InitError(strErrors.str());
         }
@@ -768,15 +770,29 @@ bool AppInit2()
 
     if (fFirstRun)
     {
+        uiInterface.InitMessage(_("Generating unique Give* address..."));
+
         // Create new keyUser and set as default key
         RandAddSeedPerfmon();
 
-        CPubKey newDefaultKey;
-        if (!pwalletMain->GetKeyFromPool(newDefaultKey, false))
+//        CPubKey newDefaultKey;
+        CWalletDB walletdb(pwalletMain->strWalletFile);
+
+        CAccount account;
+        if (!walletdb.ReadAccount("", account))
+            printf("Unable to ReadAccount(\"\")\n");
+
+        printf("GetKeyFromPool(account.vchPubKey, true)\n");
+        if (!pwalletMain->GetKeyFromPool(account.vchPubKey, true))
             strErrors << _("Cannot initialize keypool") << "\n";
-        pwalletMain->SetDefaultKey(newDefaultKey);
-        if (!pwalletMain->SetAddressBookName(pwalletMain->vchDefaultKey.GetID(), ""))
+        pwalletMain->SetDefaultKey(account.vchPubKey);
+        printf("SetDefaultKey(account.vchPubKey) : %s\n", CBitcoinAddress(pwalletMain->vchDefaultKey.GetID()).ToString().c_str());
+
+        if (!pwalletMain->SetAddressBookName(account.vchPubKey.GetID(), "My Give* Address"))
             strErrors << _("Cannot write default address") << "\n";
+        if (!walletdb.WriteAccount("", account))
+            printf("Unable to WriteAccount(\"\"\n");
+
     }
 
     printf("%s", strErrors.str().c_str());

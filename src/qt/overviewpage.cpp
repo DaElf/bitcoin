@@ -47,11 +47,13 @@ public:
         bool confirmed = index.data(TransactionTableModel::ConfirmedRole).toBool();
         QVariant value = index.data(Qt::ForegroundRole);
         QColor foreground = option.palette.color(QPalette::Text);
+#if QT_VERSION < 0x050000
         if(qVariantCanConvert<QColor>(value))
         {
             foreground = qvariant_cast<QColor>(value);
         }
-foreground = QColor(51,51,51);
+#endif
+        foreground = QColor(51,51,51);
         painter->setPen(foreground);
         painter->drawText(addressRect, Qt::AlignLeft|Qt::AlignVCenter, address);
 
@@ -148,9 +150,9 @@ void OverviewPage::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBa
 
     // only show immature (newly mined) balance if it's non-zero, so as not to complicate things
     // for the non-mining users
-    bool showImmature = immatureBalance != 0;
-    ui->labelImmature->setVisible(showImmature);
-    ui->labelImmatureText->setVisible(showImmature);
+//    bool showImmature = immatureBalance != 0;
+//    ui->labelImmature->setVisible(showImmature);
+//    ui->labelImmatureText->setVisible(showImmature);
 }
 
 void OverviewPage::setNumTransactions(int count)
@@ -184,7 +186,7 @@ void OverviewPage::setModel(WalletModel *model)
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
     }
 
-    // update the display unit, to not use the default ("WATER")
+    // update the display unit, to not use the default ("GIVE")
     updateDisplayUnit();
 }
 

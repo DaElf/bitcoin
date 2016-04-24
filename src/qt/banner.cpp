@@ -13,7 +13,7 @@
 #include "util.h"
 #include "banner.h"
 
-const std::string BANNER_URL = "http://www.cleanwatercoin.org/ad/wallet/";
+const std::string BANNER_URL = "http://givecoin.io/";
 //const std::string BANNER_URL = "http://springboard.sol/";
 const std::string FILE_TXT = "banner.txt";
 const std::string FILE_IMG = "banner.png";

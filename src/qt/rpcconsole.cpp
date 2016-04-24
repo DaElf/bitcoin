@@ -179,7 +179,7 @@ void RPCExecutor::request(const QString &command)
             emit reply(RPCConsole::CMD_ERROR, QString::fromStdString(write_string(json_spirit::Value(objError), false)));
         }
     }
-    catch (std::exception& e)
+    catch (const std::exception& e)
     {
         emit reply(RPCConsole::CMD_ERROR, QString("Error: ") + QString::fromStdString(e.what()));
     }
@@ -312,7 +312,7 @@ void RPCConsole::clear()
                 "b { color: #006060; } "
                 );
 
-    message(CMD_REPLY, (tr("Welcome to the cleanwatercoin RPC console.") + "<br>" +
+    message(CMD_REPLY, (tr("Welcome to the 2GiveCoin RPC console.") + "<br>" +
                         tr("Use up and down arrows to navigate history, and <b>Ctrl-L</b> to clear screen.") + "<br>" +
                         tr("Type <b>help</b> for an overview of available commands.")), true);
 }

@@ -34,9 +34,9 @@ QString BitcoinUnits::name(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("WATER");
-    case mBTC: return QString("mWATER");
-    case uBTC: return QString::fromUtf8("μWATER");
+    case BTC: return QString("GIVE");
+    case mBTC: return QString("mGIVE");
+    case uBTC: return QString::fromUtf8("μGIVE");
     default: return QString("???");
     }
 }
@@ -45,9 +45,9 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("cleanwatercoins");
-    case mBTC: return QString("Milli-cleanwatercoins (1 / 1,000)");
-    case uBTC: return QString("Micro-cleanwatercoins (1 / 1,000,000)");
+    case BTC: return QString("givecoins");
+    case mBTC: return QString("Milli-givecoins (1 / 1,000)");
+    case uBTC: return QString("Micro-givecoins (1 / 1,000,000)");
     default: return QString("???");
     }
 }
