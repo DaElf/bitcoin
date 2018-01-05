@@ -12,7 +12,8 @@ const std::string CLIENT_NAME("2GiveCoin");
 
 // Client version number
 #define CLIENT_VERSION_SUFFIX   "-RC6.2"
-#define BUILD_DATE __DATE__ ", " __TIME__
+/* XXX */
+//#define BUILD_DATE __DATE__ ", " __TIME__
 
 // The following part of the code determines the CLIENT_BUILD variable.
 // Several mechanisms are used for this:

@@ -338,7 +338,8 @@ vg_b58_encode_check(void *buf, size_t len, char *result)
     BIGNUM *bn, *bndiv, *bntmp;
     BIGNUM bna, bnb, bnbase, bnrem;
     unsigned char *binres;
-    int brlen, zpfx;
+    int brlen;
+    size_t zpfx;
 
     bnctx = BN_CTX_new();
     BN_init(&bna);
@@ -393,13 +394,14 @@ vg_b58_encode_check(void *buf, size_t len, char *result)
 int
 vg_b58_decode_check(const char *input, void *buf, size_t len)
 {
-    int i, l, c;
+    int c;
     unsigned char *xbuf = NULL;
     BIGNUM bn, bnw, bnbase;
     BN_CTX *bnctx;
     unsigned char hash1[32], hash2[32];
     int zpfx;
     int res = 0;
+    size_t i, l;
 
     BN_init(&bn);
     BN_init(&bnw);
@@ -759,7 +761,7 @@ vg_protect_crypt(int parameter_group,
             goto out;
     }
 
-    if (parameter_group > (sizeof(protkey_parameters) /
+    if (parameter_group > (int)(sizeof(protkey_parameters) /
                    sizeof(protkey_parameters[0])))
         goto out;
     params = &protkey_parameters[parameter_group];
@@ -935,7 +937,7 @@ vg_protect_decode_privkey(EC_KEY *pkey, int *keytype,
 
     res = vg_b58_decode_check(encoded, ecenc, sizeof(ecenc));
 
-    if ((res < 2) || (res > sizeof(ecenc)))
+    if ((res < 2) || (res > (int)sizeof(ecenc)))
         return 0;
 
     switch (ecenc[0]) {
@@ -1161,7 +1163,7 @@ vg_check_password_complexity(const char *pass, int verbose)
 
     len = strlen(pass);
     for (i = 0; i < len; i++) {
-        if (pass[i] > sizeof(ascii_class))
+      if (pass[i] > (int)sizeof(ascii_class))
             /* FIXME: skip the rest of the UTF8 char */
             classes[5]++;
         else if (!ascii_class[(int)pass[i]])
@@ -1475,7 +1477,7 @@ vg_thread_loop(void *arg)
 
 		EC_POINTs_make_affine(pgroup, nbatch, ppnt, vxcp->vxc_bnctx);
 
-		for (i = 0; i < nbatch; i++, vxcp->vxc_delta++) {
+		for (i = 0; i < (int)nbatch; i++, vxcp->vxc_delta++) {
 			/* Hash the public key */
 			len = EC_POINT_point2oct(pgroup, ppnt[i],
 						 POINT_CONVERSION_UNCOMPRESSED,
@@ -1939,7 +1941,7 @@ vg_output_timing_console(vg_context_t *vcp, double count,
              unsigned long long rate, unsigned long long total)
 {
     double prob, time, targ;
-    char *unit;
+    const char *unit;
     char linebuf[80];
     int rem, p, i;
 
@@ -1977,7 +1979,7 @@ vg_output_timing_console(vg_context_t *vcp, double count,
             p = sizeof(linebuf) - rem;
         }
 
-        for (i = 0; i < sizeof(targs)/sizeof(targs[0]); i++) {
+        for (i = 0; i < (int)(sizeof(targs)/sizeof(targs[0])); i++) {
             targ = targs[i];
             if ((targ < 1.0) && (prob <= targ))
                 break;
@@ -2504,7 +2506,8 @@ free_ranges(BIGNUM **ranges)
  * Address prefix AVL tree node
  */
 
-const int vpk_nwords = (25 + sizeof(BN_ULONG) - 1) / sizeof(BN_ULONG);
+/* XXX */
+//const int vpk_nwords = (25 + sizeof(BN_ULONG) - 1) / sizeof(BN_ULONG);
 
 typedef struct _vg_prefix_s {
     avl_item_t		vp_item;
@@ -2708,7 +2711,7 @@ prefix_case_iter_init(prefix_case_iter_t *cip, const char *pfx)
     cip->ci_nbits = 0;
     cip->ci_value = 0;
     for (i = 0; pfx[i]; i++) {
-        if (i > sizeof(cip->ci_prefix))
+      if (i > (int)sizeof(cip->ci_prefix))
             return 0;
         if (!b58_case_map[(int)pfx[i]]) {
             /* Character isn't case-swappable, ignore it */
@@ -3170,13 +3173,14 @@ vg_regex_context_add_patterns(vg_context_t *vcp,
     vg_regex_context_t *vcrp = (vg_regex_context_t *) vcp;
     const char *pcre_errptr;
     int pcre_erroffset;
-    unsigned long i, nres, count;
+    unsigned long nres, count;
+    int i;
     void **mem;
 
     if (!npatterns)
         return 1;
 
-    if (npatterns > (vcrp->vcr_nalloc - vcrp->base.vc_npatterns)) {
+    if (npatterns > (int)(vcrp->vcr_nalloc - vcrp->base.vc_npatterns)) {
         count = npatterns + vcrp->base.vc_npatterns;
         if (count < (2 * vcrp->vcr_nalloc)) {
             count = (2 * vcrp->vcr_nalloc);
@@ -3188,7 +3192,7 @@ vg_regex_context_add_patterns(vg_context_t *vcp,
         if (!mem)
             return 0;
 
-        for (i = 0; i < vcrp->base.vc_npatterns; i++) {
+        for (i = 0; i < (int)vcrp->base.vc_npatterns; i++) {
             mem[i] = vcrp->vcr_regex[i];
             mem[count + i] = vcrp->vcr_regex_extra[i];
             mem[(2 * count) + i] = (void *) vcrp->vcr_regex_pat[i];
@@ -3244,7 +3248,7 @@ vg_regex_context_clear_all_patterns(vg_context_t *vcp)
 {
     vg_regex_context_t *vcrp = (vg_regex_context_t *) vcp;
     int i;
-    for (i = 0; i < vcrp->base.vc_npatterns; i++) {
+    for (i = 0; i < (int)vcrp->base.vc_npatterns; i++) {
         if (vcrp->vcr_regex_extra[i])
             pcre_free(vcrp->vcr_regex_extra[i]);
         pcre_free(vcrp->vcr_regex[i]);
@@ -3335,7 +3339,7 @@ restart_loop:
         re = vcrp->vcr_regex[i];
 
         if (vg_exec_context_upgrade_lock(vxcp) &&
-            ((i >= vcrp->base.vc_npatterns) ||
+            ((i >= (int)vcrp->base.vc_npatterns) ||
              (vcrp->vcr_regex[i] != re)))
             goto restart_loop;
 

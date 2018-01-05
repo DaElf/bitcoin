@@ -990,9 +990,9 @@ int generateMTRandom(unsigned int s, int range)
 }
 
 
-
-static const int64 nMiyy = 1 * COIN;
-static const int CUTOFF_HEIGHT = 1000000000;	// Temp max height. May need to be forked based on varied reward system
+/* XXX */
+//static const int64 nMiyy = 1 * COIN;
+//static const int CUTOFF_HEIGHT = 1000000000;	// Temp max height. May need to be forked based on varied reward system
 
 
 // miner's coin base reward based on
@@ -1018,8 +1018,8 @@ int64 GetProofOfWorkReward(int nHeight, int64 nFees, uint256 prevHash)
 // miner's coin stake reward based on nBits and coin age spent (coin-days)
 // simple algorithm, not depend on the diff
 
-
-const int YEARLY_BLOCKCOUNT = 262800;	// 365 * 720
+/* XXX */
+//const int YEARLY_BLOCKCOUNT = 262800;	// 365 * 720
 int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTime, int nHeight)
 {
     int64 nRewardCoinYear;
@@ -2106,9 +2106,9 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot) const
 //    if (true)
     {
         // Check timestamp
-        int64 nntime = GetBlockTime();
-        int64 nnadjtime = GetAdjustedTime();
-        int64 nndtime = nnadjtime + nMaxClockDrift;
+      //    int64 nntime = GetBlockTime();
+      // int64 nnadjtime = GetAdjustedTime();
+      //  int64 nndtime = nnadjtime + nMaxClockDrift;
 
         printf("getblocktime actual: %lld, expected: %lld\n", GetBlockTime(), FutureDrift(GetAdjustedTime()));
     }
