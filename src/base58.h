@@ -1,28 +1,24 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin Developers
-// Copyright (c) 2011-2013 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 
-//
 // Why base-58 instead of standard base-64 encoding?
 // - Don't want 0OIl characters that look the same in some fonts and
 //      could be used to create visually identical looking account numbers.
 // - A string with non-alphanumeric characters is not as easily accepted as an account number.
 // - E-mail usually won't line-break if there's no punctuation to break at.
 // - Double-clicking selects the whole number as one word if it's all alphanumeric.
-//
+
 #ifndef BITCOIN_BASE58_H
 #define BITCOIN_BASE58_H
 
 #include <string>
 #include <vector>
-
 #include "bignum.h"
 #include "key.h"
 #include "script.h"
-#include "allocators.h"
 
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -171,8 +167,6 @@ inline bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>
 
 
 
-
-
 /** Base class for all base58-encoded data */
 class CBase58Data
 {
@@ -181,13 +175,19 @@ protected:
     unsigned char nVersion;
 
     // the actually encoded data
-    typedef std::vector<unsigned char, zero_after_free_allocator<unsigned char> > vector_uchar;
-    vector_uchar vchData;
+    std::vector<unsigned char> vchData;
 
     CBase58Data()
     {
         nVersion = 0;
         vchData.clear();
+    }
+
+    ~CBase58Data()
+    {
+        // zero the memory, as it may contain sensitive data
+        if (!vchData.empty())
+            memset(&vchData[0], 0, vchData.size());
     }
 
     void SetData(int nVersionIn, const void* pdata, size_t nSize)
@@ -218,7 +218,7 @@ public:
         vchData.resize(vchTemp.size() - 1);
         if (!vchData.empty())
             memcpy(&vchData[0], &vchTemp[1], vchData.size());
-        OPENSSL_cleanse(&vchTemp[0], vchData.size());
+        memset(&vchTemp[0], 0, vchTemp.size());
         return true;
     }
 
@@ -250,10 +250,10 @@ public:
     bool operator> (const CBase58Data& b58) const { return CompareTo(b58) >  0; }
 };
 
-/** base58-encoded bitcoin addresses.
- * ppcoin public-key-hash-addresses have version 55 (or 111 testnet).
+/** base58-encoded Bitcoin addresses.
+ * Public-key-hash-addresses have version 0 (or 111 testnet).
  * The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
- * Script-hash-addresses have version 117 (or 196 testnet).
+ * Script-hash-addresses have version 5 (or 196 testnet).
  * The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
  */
 class CBitcoinAddress;
@@ -273,10 +273,10 @@ class CBitcoinAddress : public CBase58Data
 public:
     enum
     {
-        PUBKEY_ADDRESS = 55,  // ppcoin: addresses begin with 'P'
-        SCRIPT_ADDRESS = 117, // ppcoin: addresses begin with 'p'
-        PUBKEY_ADDRESS_TEST = 111,
-        SCRIPT_ADDRESS_TEST = 196,
+        PUBKEY_ADDRESS = 11,  // cleanwatercoin: address begin with '5'
+        SCRIPT_ADDRESS = 8,
+        PUBKEY_ADDRESS_TEST = 113,
+        SCRIPT_ADDRESS_TEST = 196
     };
 
     bool Set(const CKeyID &id) {
@@ -421,7 +421,7 @@ public:
         bool fExpectTestNet = false;
         switch(nVersion)
         {
-             case (128 + CBitcoinAddress::PUBKEY_ADDRESS):
+            case (128 + CBitcoinAddress::PUBKEY_ADDRESS):
                 break;
 
             case (128 + CBitcoinAddress::PUBKEY_ADDRESS_TEST):
@@ -454,4 +454,4 @@ public:
     }
 };
 
-#endif // BITCOIN_BASE58_H
+#endif

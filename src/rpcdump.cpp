@@ -1,5 +1,4 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
-// Copyright (c) 2012-2013 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -35,29 +34,21 @@ public:
 
 Value importprivkey(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "importprivkey <ppcoinprivkey> [label] [rescan=true]\n"
+            "importprivkey <cleanwatercoinprivkey> [label]\n"
             "Adds a private key (as returned by dumpprivkey) to your wallet.");
 
     string strSecret = params[0].get_str();
     string strLabel = "";
     if (params.size() > 1)
         strLabel = params[1].get_str();
-
-    // Whether to perform rescan after import
-    bool fRescan = true;
-    if (params.size() > 2)
-        fRescan = params[2].get_bool();
-
     CBitcoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strSecret);
 
     if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
-    if (pwalletMain->IsLocked())
-        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
     if (fWalletUnlockMintOnly) // ppcoin: no importprivkey in mint-only mode
-        throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
 
     CKey key;
     bool fCompressed;
@@ -72,11 +63,9 @@ Value importprivkey(const Array& params, bool fHelp)
 
         if (!pwalletMain->AddKey(key))
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
-	
-        if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
-            pwalletMain->ReacceptWalletTransactions();
-        }
+
+        pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
+        pwalletMain->ReacceptWalletTransactions();
     }
 
     return Value::null;
@@ -86,18 +75,15 @@ Value dumpprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "dumpprivkey <ppcoinaddress>\n"
-            "Reveals the private key corresponding to <ppcoinaddress>.");
+            "dumpprivkey <cleanwatercoinaddress>\n"
+            "Reveals the private key corresponding to <cleanwatercoinaddress>.");
 
     string strAddress = params[0].get_str();
     CBitcoinAddress address;
     if (!address.SetString(strAddress))
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid ppcoin address");
-    if (pwalletMain->IsLocked())
-        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid cleanwatercoin address");
     if (fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
-        throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
-
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
     CKeyID keyID;
     if (!address.GetKeyID(keyID))
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");

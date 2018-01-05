@@ -1,14 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2012 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_UTIL_H
 #define BITCOIN_UTIL_H
 
 #include "uint256.h"
-
-#include <stdarg.h>
 
 #ifndef WIN32
 #include <sys/types.h>
@@ -18,8 +15,6 @@
 typedef int pid_t; /* define for Windows compatibility */
 #endif
 #include <map>
-#include <list>
-#include <utility>
 #include <vector>
 #include <string>
 
@@ -29,6 +24,9 @@ typedef int pid_t; /* define for Windows compatibility */
 #include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
+#include <openssl/sha.h>
+#include <openssl/ripemd.h>
+
 #include "netbase.h" // for AddTimeData
 
 typedef long long  int64;
@@ -37,12 +35,17 @@ typedef unsigned long long  uint64;
 static const int64 COIN = 1000000;
 static const int64 CENT = 10000;
 
-#define loop                for (;;)
+//#define loop                for (;;)
 #define BEGIN(a)            ((char*)&(a))
 #define END(a)              ((char*)&((&(a))[1]))
 #define UBEGIN(a)           ((unsigned char*)&(a))
 #define UEND(a)             ((unsigned char*)&((&(a))[1]))
 #define ARRAYLEN(array)     (sizeof(array)/sizeof((array)[0]))
+
+#define UVOIDBEGIN(a)        ((void*)&(a))
+#define CVOIDBEGIN(a)        ((const void*)&(a))
+#define UINTBEGIN(a)        ((uint32_t*)&(a))
+#define CUINTBEGIN(a)        ((const uint32_t*)&(a))
 
 #ifndef PRI64d
 #if defined(_MSC_VER) || defined(__MSVCRT__)
@@ -55,6 +58,16 @@ static const int64 CENT = 10000;
 #define PRI64x  "llx"
 #endif
 #endif
+
+#ifndef THROW_WITH_STACKTRACE
+#define THROW_WITH_STACKTRACE(exception)  \
+{                                         \
+    LogStackTrace();                      \
+    throw (exception);                    \
+}
+void LogStackTrace();
+#endif
+
 
 /* Format characters for (s)size_t and ptrdiff_t */
 #if defined(_MSC_VER) || defined(__MSVCRT__)
@@ -103,24 +116,12 @@ T* alignup(T* p)
 #endif
 #else
 #define MAX_PATH            1024
-#endif
-
-inline void MilliSleep(int64 n)
+inline void Sleep(int64 n)
 {
-#if BOOST_VERSION >= 105000
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(n));
-#else
-    boost::this_thread::sleep(boost::posix_time::milliseconds(n));
-#endif
+    /*Boost has a year 2038 problem— if the request sleep time is past epoch+2^31 seconds the sleep returns instantly.
+      So we clamp our sleeps here to 10 years and hope that boost is fixed by 2028.*/
+    boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(n>315576000000LL?315576000000LL:n));
 }
-
-#ifndef THROW_WITH_STACKTRACE
-#define THROW_WITH_STACKTRACE(exception)  \
-{                                         \
-    LogStackTrace();                      \
-    throw (exception);                    \
-}
-void LogStackTrace();
 #endif
 
 /* This GNU C extension enables the compiler to check the format string against the parameters provided.
@@ -146,14 +147,17 @@ extern bool fDebug;
 extern bool fDebugNet;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugger;
+extern bool fRequestShutdown;
+extern bool fShutdown;
 extern bool fDaemon;
 extern bool fServer;
+extern bool fPosMinting;
 extern bool fCommandLine;
 extern std::string strMiscWarning;
 extern bool fTestNet;
 extern bool fNoListen;
 extern bool fLogTimestamps;
-extern volatile bool fReopenDebugLog;
+extern bool fReopenDebugLog;
 
 void RandAddSeed();
 void RandAddSeedPerfmon();
@@ -208,9 +212,6 @@ bool WildcardMatch(const char* psz, const char* mask);
 bool WildcardMatch(const std::string& str, const std::string& mask);
 void FileCommit(FILE *fileout);
 int GetFilesize(FILE* file);
-bool TruncateFile(FILE *file, unsigned int length);
-int RaiseFileDescriptorLimit(int nMinFD);
-void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length);
 bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest);
 boost::filesystem::path GetDefaultDataDir();
 const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
@@ -221,7 +222,6 @@ void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-boost::filesystem::path GetTempPath();
 void ShrinkDebugFile();
 int GetRandInt(int nMax);
 uint64 GetRand(uint64 nMax);
@@ -229,7 +229,7 @@ uint256 GetRandHash();
 int64 GetTime();
 void SetMockTime(int64 nMockTimeIn);
 int64 GetAdjustedTime();
-int64 GetTimeOffset();
+long hex2long(const char* hexString);
 std::string FormatFullVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 void AddTimeData(const CNetAddr& ip, int64 nTime);
@@ -345,12 +345,6 @@ inline int64 GetTimeMillis()
             boost::posix_time::ptime(boost::gregorian::date(1970,1,1))).total_milliseconds();
 }
 
-inline int64 GetTimeMicros()
-{
-    return (boost::posix_time::ptime(boost::posix_time::microsec_clock::universal_time()) -
-            boost::posix_time::ptime(boost::gregorian::date(1970,1,1))).total_microseconds();
-}
-
 inline std::string DateTimeStrFormat(const char* pszFormat, int64 nTime)
 {
     time_t n = nTime;
@@ -365,6 +359,7 @@ inline std::string DateTimeStrFormat(int64 nTime)
 {
     return DateTimeStrFormat(strTimestampFormat.c_str(), nTime);
 }
+
 
 template<typename T>
 void skipspaces(T& it)
@@ -427,27 +422,116 @@ bool SoftSetArg(const std::string& strArg, const std::string& strValue);
  */
 bool SoftSetBoolArg(const std::string& strArg, bool fValue);
 
-/**
- * MWC RNG of George Marsaglia
- * This is intended to be fast. It has a period of 2^59.3, though the
- * least significant 16 bits only have a period of about 2^30.1.
- *
- * @return random value
- */
-extern uint32_t insecure_rand_Rz;
-extern uint32_t insecure_rand_Rw;
-static inline uint32_t insecure_rand(void)
+
+
+
+
+
+
+
+
+template<typename T1>
+inline uint256 Hash(const T1 pbegin, const T1 pend)
 {
-    insecure_rand_Rz = 36969 * (insecure_rand_Rz & 65535) + (insecure_rand_Rz >> 16);
-    insecure_rand_Rw = 18000 * (insecure_rand_Rw & 65535) + (insecure_rand_Rw >> 16);
-    return (insecure_rand_Rw << 16) + insecure_rand_Rz;
+    static unsigned char pblank[1];
+    uint256 hash1;
+    SHA256((pbegin == pend ? pblank : (unsigned char*)&pbegin[0]), (pend - pbegin) * sizeof(pbegin[0]), (unsigned char*)&hash1);
+    uint256 hash2;
+    SHA256((unsigned char*)&hash1, sizeof(hash1), (unsigned char*)&hash2);
+    return hash2;
 }
 
-/**
- * Seed insecure_rand using the random pool.
- * @param Deterministic Use a determinstic seed
- */
-void seed_insecure_rand(bool fDeterministic=false);
+class CHashWriter
+{
+private:
+    SHA256_CTX ctx;
+
+public:
+    int nType;
+    int nVersion;
+
+    void Init() {
+        SHA256_Init(&ctx);
+    }
+
+    CHashWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn) {
+        Init();
+    }
+
+    CHashWriter& write(const char *pch, size_t size) {
+        SHA256_Update(&ctx, pch, size);
+        return (*this);
+    }
+
+    // invalidates the object
+    uint256 GetHash() {
+        uint256 hash1;
+        SHA256_Final((unsigned char*)&hash1, &ctx);
+        uint256 hash2;
+        SHA256((unsigned char*)&hash1, sizeof(hash1), (unsigned char*)&hash2);
+        return hash2;
+    }
+
+    template<typename T>
+    CHashWriter& operator<<(const T& obj) {
+        // Serialize to this stream
+        ::Serialize(*this, obj, nType, nVersion);
+        return (*this);
+    }
+};
+
+
+template<typename T1, typename T2>
+inline uint256 Hash(const T1 p1begin, const T1 p1end,
+                    const T2 p2begin, const T2 p2end)
+{
+    static unsigned char pblank[1];
+    uint256 hash1;
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, (p1begin == p1end ? pblank : (unsigned char*)&p1begin[0]), (p1end - p1begin) * sizeof(p1begin[0]));
+    SHA256_Update(&ctx, (p2begin == p2end ? pblank : (unsigned char*)&p2begin[0]), (p2end - p2begin) * sizeof(p2begin[0]));
+    SHA256_Final((unsigned char*)&hash1, &ctx);
+    uint256 hash2;
+    SHA256((unsigned char*)&hash1, sizeof(hash1), (unsigned char*)&hash2);
+    return hash2;
+}
+
+template<typename T1, typename T2, typename T3>
+inline uint256 Hash(const T1 p1begin, const T1 p1end,
+                    const T2 p2begin, const T2 p2end,
+                    const T3 p3begin, const T3 p3end)
+{
+    static unsigned char pblank[1];
+    uint256 hash1;
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, (p1begin == p1end ? pblank : (unsigned char*)&p1begin[0]), (p1end - p1begin) * sizeof(p1begin[0]));
+    SHA256_Update(&ctx, (p2begin == p2end ? pblank : (unsigned char*)&p2begin[0]), (p2end - p2begin) * sizeof(p2begin[0]));
+    SHA256_Update(&ctx, (p3begin == p3end ? pblank : (unsigned char*)&p3begin[0]), (p3end - p3begin) * sizeof(p3begin[0]));
+    SHA256_Final((unsigned char*)&hash1, &ctx);
+    uint256 hash2;
+    SHA256((unsigned char*)&hash1, sizeof(hash1), (unsigned char*)&hash2);
+    return hash2;
+}
+
+template<typename T>
+uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
+{
+    CHashWriter ss(nType, nVersion);
+    ss << obj;
+    return ss.GetHash();
+}
+
+inline uint160 Hash160(const std::vector<unsigned char>& vch)
+{
+    uint256 hash1;
+    SHA256(&vch[0], vch.size(), (unsigned char*)&hash1);
+    uint160 hash2;
+    RIPEMD160((unsigned char*)&hash1, sizeof(hash1), (unsigned char*)&hash2);
+    return hash2;
+}
+
 
 /** Median filter over a stream of values.
  * Returns the median of the last N numbers
@@ -458,6 +542,7 @@ private:
     std::vector<T> vValues;
     std::vector<T> vSorted;
     unsigned int nSize;
+    T tInitial;
 public:
     CMedianFilter(unsigned int size, T initial_value):
         nSize(size)
@@ -465,6 +550,7 @@ public:
         vValues.reserve(size);
         vValues.push_back(initial_value);
         vSorted = vValues;
+        tInitial = initial_value;
     }
 
     void input(T value)
@@ -474,6 +560,27 @@ public:
             vValues.erase(vValues.begin());
         }
         vValues.push_back(value);
+
+        vSorted.resize(vValues.size());
+        std::copy(vValues.begin(), vValues.end(), vSorted.begin());
+        std::sort(vSorted.begin(), vSorted.end());
+    }
+
+    // remove last instance of a value
+    void removeLast(T value)
+    {
+        for (int i = vValues.size()-1; i >= 0; --i)
+        {
+            if (vValues[i] == value)
+            {
+                vValues.erase(vValues.begin()+i);
+                break;
+            }
+        }
+        if (vValues.empty())
+        {
+            vValues.push_back(tInitial);
+        }
 
         vSorted.resize(vValues.size());
         std::copy(vValues.begin(), vValues.end(), vSorted.begin());
@@ -544,60 +651,5 @@ inline uint32_t ByteReverse(uint32_t value)
     return (value<<16) | (value>>16);
 }
 
-// Standard wrapper for do-something-forever thread functions.
-// "Forever" really means until the thread is interrupted.
-// Use it like:
-//   new boost::thread(boost::bind(&LoopForever<void (*)()>, "dumpaddr", &DumpAddresses, 900000));
-// or maybe:
-//    boost::function<void()> f = boost::bind(&FunctionWithArg, argument);
-//    threadGroup.create_thread(boost::bind(&LoopForever<boost::function<void()> >, "nothing", f, milliseconds));
-template <typename Callable> void LoopForever(const char* name,  Callable func, int64 msecs)
-{
-    std::string s = strprintf("bitcoin-%s", name);
-    RenameThread(s.c_str());
-    printf("%s thread start\n", name);
-    try
-    {
-        while (1)
-        {
-            MilliSleep(msecs);
-            func();
-        }
-    }
-    catch (boost::thread_interrupted)
-    {
-        printf("%s thread stop\n", name);
-        throw;
-    }
-    catch (std::exception& e) {
-        PrintException(&e, name);
-    }
-    catch (...) {
-        PrintException(NULL, name);
-    }
-}
-// .. and a wrapper that just calls func once
-template <typename Callable> void TraceThread(const char* name,  Callable func)
-{
-    std::string s = strprintf("bitcoin-%s", name);
-    RenameThread(s.c_str());
-    try
-    {
-        printf("%s thread start\n", name);
-        func();
-        printf("%s thread exit\n", name);
-    }
-    catch (boost::thread_interrupted)
-    {
-        printf("%s thread interrupt\n", name);
-        throw;
-    }
-    catch (std::exception& e) {
-        PrintException(&e, name);
-    }
-    catch (...) {
-        PrintException(NULL, name);
-    }
-}
-
 #endif
+

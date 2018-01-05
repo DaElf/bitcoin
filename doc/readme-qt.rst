@@ -1,4 +1,4 @@
-Bitcoin-Qt: Qt4 GUI for Bitcoin
+Bitcoin-qt: Qt4 GUI for Bitcoin
 ===============================
 
 Build instructions
@@ -8,25 +8,13 @@ Debian
 -------
 
 First, make sure that the required packages for Qt4 development of your
-distribution are installed, these are
-
-::
-
-for Debian and Ubuntu  <= 11.10 :
+distribution are installed, for Debian and Ubuntu these are:
 
 ::
 
     apt-get install qt4-qmake libqt4-dev build-essential libboost-dev libboost-system-dev \
         libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev \
         libssl-dev libdb4.8++-dev
-
-for Ubuntu >= 12.04 (please read the 'Berkely DB version warning' below):
-
-::
-
-    apt-get install qt4-qmake libqt4-dev build-essential libboost-dev libboost-system-dev \
-        libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev \
-        libssl-dev libdb++-dev libminiupnpc-dev
 
 then execute the following:
 
@@ -35,48 +23,54 @@ then execute the following:
     qmake
     make
 
-Alternatively, install `Qt Creator`_ and open the `bitcoin-qt.pro` file.
+Alternatively, install Qt Creator and open the `bitcoin-qt.pro` file.
 
 An executable named `bitcoin-qt` will be built.
 
-.. _`Qt Creator`: http://qt-project.org/downloads/
+
+Windows
+--------
+
+Windows build instructions:
+
+- Download the `QT Windows SDK`_ and install it. You don't need the Symbian stuff, just the desktop Qt.
+
+- Download and extract the `dependencies archive`_  [#]_, or compile openssl, boost and dbcxx yourself.
+
+- Copy the contents of the folder "deps" to "X:\\QtSDK\\mingw", replace X:\\ with the location where you installed the Qt SDK. Make sure that the contents of "deps\\include" end up in the current "include" directory.
+
+- Open the .pro file in QT creator and build as normal (ctrl-B)
+
+.. _`QT Windows SDK`: http://qt.nokia.com/downloads/sdk-windows-cpp
+.. _`dependencies archive`: https://download.visucore.com/bitcoin/qtgui_deps_1.zip
+.. [#] PGP signature: https://download.visucore.com/bitcoin/qtgui_deps_1.zip.sig (signed with RSA key ID `610945D0`_)
+.. _`610945D0`: http://pgp.mit.edu:11371/pks/lookup?op=get&search=0x610945D0
+
 
 Mac OS X
 --------
 
 - Download and install the `Qt Mac OS X SDK`_. It is recommended to also install Apple's Xcode with UNIX tools.
 
-- Download and install either `MacPorts`_ or `HomeBrew`_.
+- Download and install `MacPorts`_.
 
-- Execute the following commands in a terminal to get the dependencies using MacPorts:
+- Execute the following commands in a terminal to get the dependencies:
 
 ::
 
 	sudo port selfupdate
 	sudo port install boost db48 miniupnpc
 
-- Execute the following commands in a terminal to get the dependencies using HomeBrew:
+- Open the .pro file in Qt Creator and build as normal (cmd-B)
 
-::
-
-	brew update
-	brew install boost miniupnpc openssl berkeley-db4
-
-- If using HomeBrew,  edit `bitcoin-qt.pro` to account for library location differences. There's a diff in `contrib/homebrew/bitcoin-qt-pro.patch` that shows what you need to change, or you can just patch by doing
-
-        patch -p1 < contrib/homebrew/bitcoin.qt.pro.patch
-
-- Open the bitcoin-qt.pro file in Qt Creator and build as normal (cmd-B)
-
-.. _`Qt Mac OS X SDK`: http://qt-project.org/downloads/
+.. _`Qt Mac OS X SDK`: http://qt.nokia.com/downloads/sdk-mac-os-cpp
 .. _`MacPorts`: http://www.macports.org/install.php
-.. _`HomeBrew`: http://mxcl.github.io/homebrew/
 
 
 Build configuration options
 ============================
 
-UPnP port forwarding
+UPNnP port forwarding
 ---------------------
 
 To use UPnP for port forwarding behind a NAT router (recommended, as more connections overall allow for a faster and more stable bitcoin experience), pass the following argument to qmake:
@@ -113,8 +107,8 @@ FreeDesktop notification interface through DBUS using the following qmake option
 Generation of QR codes
 -----------------------
 
-libqrencode may be used to generate QRCode images for payment requests.
-It can be downloaded from http://fukuchi.org/works/qrencode/index.html.en, or installed via your package manager. Pass the USE_QRCODE
+libqrencode may be used to generate QRCode images for payment requests. 
+It can be downloaded from http://fukuchi.org/works/qrencode/index.html.en, or installed via your package manager. Pass the USE_QRCODE 
 flag to qmake to control this:
 
 +--------------+--------------------------------------------------------------------------+

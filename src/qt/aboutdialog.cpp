@@ -1,17 +1,15 @@
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
-
 #include "clientmodel.h"
-#include "clientversion.h"
+
+#include "version.h"
 
 AboutDialog::AboutDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AboutDialog)
 {
     ui->setupUi(this);
-
-    // Set current copyright year
-    ui->PPCoinCopyrightLabel->setText(tr("Copyright") + QString(" &copy; 2011-%1 ").arg(COPYRIGHT_YEAR) + tr("Peercoin (PPCoin) Developers"));
+	// this->setStyleSheet("background-color: #effbef;");
 }
 
 void AboutDialog::setModel(ClientModel *model)

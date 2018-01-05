@@ -2,6 +2,7 @@
 #define SENDCOINSDIALOG_H
 
 #include <QDialog>
+#include <QString>
 
 namespace Ui {
     class SendCoinsDialog;
@@ -29,8 +30,8 @@ public:
      */
     QWidget *setupTabChain(QWidget *prev);
 
-    void setAddress(const QString &address);
     void pasteEntry(const SendCoinsRecipient &rv);
+    void pasteEntry(const SendCoinsRecipient &rv, bool newRecipientsAllowed);
     bool handleURI(const QString &uri);
 
 public slots:
@@ -50,6 +51,19 @@ private slots:
     void on_sendButton_clicked();
     void removeEntry(SendCoinsEntry* entry);
     void updateDisplayUnit();
+    void coinControlFeatureChanged(bool);
+    void coinControlButtonClicked();
+    void coinControlChangeChecked(int);
+    void coinControlChangeEdited(const QString &);
+    void coinControlUpdateLabels();
+    void coinControlClipboardQuantity();
+    void coinControlClipboardAmount();
+    void coinControlClipboardFee();
+    void coinControlClipboardAfterFee();
+    void coinControlClipboardBytes();
+    void coinControlClipboardPriority();
+    void coinControlClipboardLowOutput();
+    void coinControlClipboardChange();
 };
 
 #endif // SENDCOINSDIALOG_H

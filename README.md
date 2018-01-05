@@ -1,26 +1,47 @@
+Clean Water Coin
 
-Peercoin Official Development Repo
-==================================
+Technical Details
+Algorithm: Scrypt
+Type: Proof of Work and Proof of Stake
+Symbol: WATER
+Max Coins: 1,000,000,000
 
-### What is Peercoin (PPCoin)?
-[Peercoin](http://peercoin.net/) (abbreviated PPC), also known as PPCoin and Peer-to-Peer Coin is the first [cryptocurrency](https://en.wikipedia.org/wiki/Cryptocurrency) design introducing [proof-of-stake consensus](http://peercoin.net/bin/peercoin-paper.pdf) as a security model, with a combined [proof-of-stake](http://peercoin.net/bin/peercoin-paper.pdf)/[proof-of-work](https://en.wikipedia.org/wiki/Proof-of-work_system) minting system. Peercoin is based on [Bitcoin](http://bitcoin.org/en/), while introducing many important innovations to cryptocurrency field including new security model, energy efficiency, better minting model and more adaptive response to rapid change in network computation power.
+Block time: 120 seconds
 
-### Peercoin Resources
-* Client and Source:
-[Client Binaries](http://sourceforge.net/projects/ppcoin/files/),
-[Source Code](https://github.com/ppcoin/ppcoin)
-* Documentation: [Peercoin Whitepaper](http://peercoin.net/bin/peercoin-paper.pdf),
-[Peercoin Wiki](https://github.com/ppcoin/ppcoin/wiki)
-* Help: 
-[Forum](http://www.peercointalk.org/),
-[Other Sites and Links...](http://www.peercointalk.org/index.php?topic=4.0;topicseen)
+Difficulty Re-Target Time: Every block
 
-Repo Guidelines
-================================
 
-* Developers work in their own forks, then submit pull requests when they think their feature or bug fix is ready.
-* If it is a simple/trivial/non-controversial change, then one of the development team members simply pulls it.
-* If it is a more complicated or potentially controversial change, then the change may be discussed in the pull request, or the requester may be asked to start a discussion [Peercoin Talk](http://www.peercointalk.org/) for a broader community discussion. 
-* The patch will be accepted if there is broad consensus that it is a good thing. Developers should expect to rework and resubmit patches if they don't match the project's coding conventions (see coding.txt) or are controversial.
-* From time to time a pull request will become outdated. If this occurs, and the pull is no longer automatically mergeable; a comment on the pull will be used to issue a warning of closure.  Pull requests closed in this manner will have their corresponding issue labeled 'stagnant'.
-* For development ideas and help see [here](http://www.peercointalk.org/index.php?board=10.0).
+Block Rewards: 
+
+1 to 50: IPO: 10,000,000 Dispersed entirely to investors and confirmation with checkpoint at block 50
+
+1,000 from block 50-7000
+
+(20,000)(1/√(Difficulty+500)) from block 7001-250,000
+
+(15,000)(1/√(Difficulty+500)) from block 250,001-500,000
+
+(10,000)(1/√(Difficulty+500)) from block 500,001+
+
+
+POS Schedule: Coins mature after 20 days
+
+POS Rewards: 	Fixed 8% beginning at block 7001-500,000 
+				Fixed 7% beginning at block 500,000-1,000,000 
+				Fixed 6% at 1,000,000-2,000,000 
+				Fixed 2% at 2,000,000+
+
+
+
+Charity Wallet Donation: 
+				0.1% of transaction Confirmations for mined blocks
+				
+
+50 Confirmations for minted blocks
+
+4 Confirmations for transactions
+
+
+P2P Port: 53590 
+RPC Port: 53591
+

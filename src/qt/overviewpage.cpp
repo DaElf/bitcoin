@@ -1,7 +1,6 @@
 #include "overviewpage.h"
 #include "ui_overviewpage.h"
 
-#include "clientmodel.h"
 #include "walletmodel.h"
 #include "bitcoinunits.h"
 #include "optionsmodel.h"
@@ -9,12 +8,13 @@
 #include "transactionfilterproxy.h"
 #include "guiutil.h"
 #include "guiconstants.h"
+#include "askpassphrasedialog.h"
 
 #include <QAbstractItemDelegate>
 #include <QPainter>
 
 #define DECORATION_SIZE 64
-#define NUM_ITEMS 3
+#define NUM_ITEMS 4
 
 class TxViewDelegate : public QAbstractItemDelegate
 {
@@ -32,6 +32,7 @@ public:
 
         QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
         QRect mainRect = option.rect;
+        painter->setBackground(QBrush(QColor(255,255,255),Qt::SolidPattern));
         QRect decorationRect(mainRect.topLeft(), QSize(DECORATION_SIZE, DECORATION_SIZE));
         int xspace = DECORATION_SIZE + 8;
         int ypad = 6;
@@ -46,12 +47,11 @@ public:
         bool confirmed = index.data(TransactionTableModel::ConfirmedRole).toBool();
         QVariant value = index.data(Qt::ForegroundRole);
         QColor foreground = option.palette.color(QPalette::Text);
-        if(value.canConvert<QBrush>())
+        if(qVariantCanConvert<QColor>(value))
         {
-            QBrush brush = qvariant_cast<QBrush>(value);
-            foreground = brush.color();
+            foreground = qvariant_cast<QColor>(value);
         }
-
+foreground = QColor(51,51,51);
         painter->setPen(foreground);
         painter->drawText(addressRect, Qt::AlignLeft|Qt::AlignVCenter, address);
 
@@ -66,6 +66,7 @@ public:
         else
         {
             foreground = option.palette.color(QPalette::Text);
+            foreground = QColor(51,153,51);
         }
         painter->setPen(foreground);
         QString amountText = BitcoinUnits::formatWithUnit(unit, amount, true);
@@ -78,6 +79,9 @@ public:
         painter->setPen(option.palette.color(QPalette::Text));
         painter->drawText(amountRect, Qt::AlignLeft|Qt::AlignVCenter, GUIUtil::dateTimeStr(date));
 
+        painter->setPen(QColor(204,204,204));
+        painter->drawLine(QPoint(mainRect.left(), mainRect.bottom()), QPoint(mainRect.right(), mainRect.bottom()));
+        painter->drawLine(QPoint(amountRect.left()-6, mainRect.top()), QPoint(amountRect.left()-6, mainRect.bottom()));
         painter->restore();
     }
 
@@ -94,8 +98,6 @@ public:
 OverviewPage::OverviewPage(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::OverviewPage),
-    clientModel(0),
-    walletModel(0),
     currentBalance(-1),
     currentStake(0),
     currentUnconfirmedBalance(-1),
@@ -134,7 +136,7 @@ OverviewPage::~OverviewPage()
 
 void OverviewPage::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance)
 {
-    int unit = walletModel->getOptionsModel()->getDisplayUnit();
+    int unit = model->getOptionsModel()->getDisplayUnit();
     currentBalance = balance;
     currentStake = stake;
     currentUnconfirmedBalance = unconfirmedBalance;
@@ -151,20 +153,14 @@ void OverviewPage::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBa
     ui->labelImmatureText->setVisible(showImmature);
 }
 
-void OverviewPage::setClientModel(ClientModel *model)
+void OverviewPage::setNumTransactions(int count)
 {
-    this->clientModel = model;
-    if(model)
-    {
-        // Show warning if this is a prerelease version
-        connect(model, SIGNAL(alertsChanged(QString)), this, SLOT(updateAlerts(QString)));
-        updateAlerts(model->getStatusBarWarnings());
-    }
+    ui->labelNumTransactions->setText(QLocale::system().toString(count));
 }
 
-void OverviewPage::setWalletModel(WalletModel *model)
+void OverviewPage::setModel(WalletModel *model)
 {
-    this->walletModel = model;
+    this->model = model;
     if(model && model->getOptionsModel())
     {
         // Set up transaction list
@@ -182,31 +178,28 @@ void OverviewPage::setWalletModel(WalletModel *model)
         setBalance(model->getBalance(), model->getStake(), model->getUnconfirmedBalance(), model->getImmatureBalance());
         connect(model, SIGNAL(balanceChanged(qint64, qint64, qint64, qint64)), this, SLOT(setBalance(qint64, qint64, qint64, qint64)));
 
+        setNumTransactions(model->getNumTransactions());
+        connect(model, SIGNAL(numTransactionsChanged(int)), this, SLOT(setNumTransactions(int)));
+
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
     }
 
-    // update the display unit, to not use the default ("BTC")
+    // update the display unit, to not use the default ("WATER")
     updateDisplayUnit();
 }
 
 void OverviewPage::updateDisplayUnit()
 {
-    if(walletModel && walletModel->getOptionsModel())
+    if(model && model->getOptionsModel())
     {
         if(currentBalance != -1)
-            setBalance(currentBalance, currentStake, currentUnconfirmedBalance, currentImmatureBalance);
+            setBalance(currentBalance, model->getStake(), currentUnconfirmedBalance, currentImmatureBalance);
 
         // Update txdelegate->unit with the current unit
-        txdelegate->unit = walletModel->getOptionsModel()->getDisplayUnit();
+        txdelegate->unit = model->getOptionsModel()->getDisplayUnit();
 
         ui->listTransactions->update();
     }
-}
-
-void OverviewPage::updateAlerts(const QString &warnings)
-{
-    this->ui->labelAlerts->setVisible(!warnings.isEmpty());
-    this->ui->labelAlerts->setText(warnings);
 }
 
 void OverviewPage::showOutOfSyncWarning(bool fShow)
