@@ -87,7 +87,7 @@ bool PaperWallet::updateTemplates(void)
     CURL     *curl;
     CURLcode res;
     FILE     *fp;
-    char *url = "http://2Give.Info/templates/default.html";
+    const char *url = "http://2Give.Info/templates/default.html";
 
     boost::filesystem::path pathSrc = GetDataDir() / "templates";
 
